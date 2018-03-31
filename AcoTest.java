@@ -8,15 +8,24 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 public class AcoTest{
-	
-	
+	static int features=9;
+	static List<Integer>featureArray = new ArrayList<Integer>();
+	static double pheromone[][] = new double[features][features];
+	static double corrArray [][] = new double[features][features];
+	static int destination = 8;
 	public static void main(String []args) throws Exception
 	{
+		
+		
+		for(int i=0;i<features;i++)
+		{
+			featureArray.add(i);
+		}
 		String line;
 		int records=0;
-		int features=9;
+		
 		double inputMatrix[][] = new double[11][9];
-		double corrArray [][] = new double[features][features];
+		
 		File file = new File("C:\\Users\\HP\\eclipse-workspace\\aco\\src\\aco\\train_data.csv");
 		@SuppressWarnings("resource")
 		BufferedReader reader = new BufferedReader(new FileReader(file));
@@ -45,11 +54,10 @@ public class AcoTest{
 		*/
 		
 //******PHEROMONE*************
-		double pheromone[][] = new double[features][features];
+		
 		int round = 1;
 		if(round == 1) {
 			pheromone = initializePheromone(features);
-			
 		}
 		else
 		{
@@ -69,19 +77,26 @@ public class AcoTest{
 		
 //*********GENERATE ANTS, RELEASE ANTS ******		
 		int numberOfAnts = features - 1;
-		double antSource[] = new int[numberOfAnts];
+		int antSource[] = new int[numberOfAnts];
 		for(int i=0 ; i< numberOfAnts ; i++)
 		{
 			antSource[i] = i; /*************CHECK : Need to generate ants randomly not serially*/
 		}
-//**********DESTINATION************
-		int destination = 759;
+			
+//*********MAKE ANTS TRAVERSE FROM SOURCE TO DESTINATION and GET FEATURE SUBSET********
+		List<List<Integer>> subset= new ArrayList<List<Integer>> (numberOfAnts);
+		List<Integer> setOfFeature = new ArrayList<Integer>();
+		for(int i = 0; i < numberOfAnts; i++)  {
+	        subset.add(new ArrayList<Integer>());
+	    }
 		
-		
-//***************CALCULATE PROBABILITY********
+		for(int i=0;i<numberOfAnts;i++)
+		{
+			setOfFeature= getFeatureSubSet(antSource[i], destination);
+			subset.add(setOfFeature);
+		}
+		round ++;
 	}
-	
-
 	
 	
 	//*******************Generating Correlation Matrix**********************************
@@ -139,27 +154,33 @@ public class AcoTest{
 		return currentPheromone;
 	}
 	
-	//*********************CALCULATE Pij *******************8
-		public static double calculateProb(int i, int j)
-		{
-			double j=0;
-			return j;
-		}
-	
 	//*****************CALUCULATING NEXT NODE TO TRAVERSE ***********************8
 	public static int getNextNode(int sourceNode, List<Integer> remainingNodes)
 	{
+		double lower=0.0,upper=0.0;
 		int nextNode;
+		double eta=0.0,eta1=0.0;
+		double toque=0.0,toque1=0.0;
 		double probabilities[] = new double[remainingNodes.size()];
 		double max;
 		/* this loop to find probabilities for the nodes not traversed from source node */
 		for(int i=0; i<remainingNodes.size();i++)
 		{
-			probabilities[i] = calculateProb(sourceNode, remainingNodes.get(i));
+			eta=corrArray[sourceNode][remainingNodes.get(i)];//probabilities[i] = calculateProb(sourceNode, remainingNodes,pheromone, corrArray);
+			toque=pheromone[sourceNode][remainingNodes.get(i)];
+			upper=eta*toque;
+			for(int j=0; j<remainingNodes.size();j++)
+			{
+				eta1=corrArray[sourceNode][remainingNodes.get(j)];//probabilities[i] = calculateProb(sourceNode, remainingNodes,pheromone, corrArray);
+				toque1=pheromone[sourceNode][remainingNodes.get(j)];
+				lower+=eta1*toque1;
+			}
+			probabilities[i]=upper/lower;
 		}
 		
-		max = probabilities[0];
+		max = 0.0;
 		nextNode = remainingNodes.get(0);
+		
 		
 		/*this loop to check the node which has maximum probability */
 		for(int i=0; i< probabilities.length; i++)
@@ -171,28 +192,51 @@ public class AcoTest{
 			}
 		}
 		return nextNode;
+		
 	}
 	
 	
-	/*  loop for only one ant finding feature subset */
+	//***********GET SUBSET OF FEATURES FOR ONE ANT **********
 	
-	List<Integer> traversedFeatures = new ArrayList<Integer>();
-	List<Integer> remainingFeatures = new ArrayList<Integer>();
-	int dest = 759;
-	int nextFeature;
-	int source = 1;//only for now................
-	do{
-		nextFeature = getNextNode(source, remainingFeatures);
-		traversedFeatures.add(nextFeature);
-		if(nextFeature == dest)
-		{
-			/*featureSetOfAnt[source] = traversedfeatures;*/
-		}
-		else 
-		{
-			remainingFeatures.remove(nextFeature);
-			source = nextFeature;
-		}
-	}while(nextNode!= dest);
-	
+	public static List<Integer> getFeatureSubSet(int source,int dest)
+	{
+		List<Integer> traversedFeatures = new ArrayList<Integer>();// to keep track of already traversed features
+		List<Integer> remainingFeatures = new ArrayList<Integer>(featureArray.size());// to keep track of possible remaining features to traverse
+		List<Integer> subset = new ArrayList<Integer>();
+		int nextFeature;
+		
+		remainingFeatures.addAll(featureArray);
+		remainingFeatures.remove(source);
+		traversedFeatures.add(source);
+		
+		do{
+			nextFeature = getNextNode(source, remainingFeatures);
+			traversedFeatures.add(nextFeature);
+			
+			System.out.println(" ");
+			for(int i=0;i<traversedFeatures.size();i++)
+			{
+				System.out.print(" "+ traversedFeatures.get(i));
+			}
+			if(nextFeature == dest)
+			{
+				subset = traversedFeatures;
+				break;
+			}
+			else 
+			{
+				for(Integer x: remainingFeatures)
+				{
+					if(x == nextFeature)
+					{
+						remainingFeatures.remove(x);
+						break;
+					}	
+				}
+				source = nextFeature;
+			}
+		}while(nextFeature!= dest);
+		return subset;
+	}
+		
 }
