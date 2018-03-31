@@ -15,7 +15,7 @@ public class AcoTest{
 		int records=0;
 		int features=9;
 		double inputMatrix[][] = new double[11][9];
-		RealMatrix corrMatrix;
+		double corrArray [][] = new double[features][features];
 		File file = new File("C:\\Users\\HP\\eclipse-workspace\\aco\\src\\aco\\train_data.csv");
 		@SuppressWarnings("resource")
 		BufferedReader reader = new BufferedReader(new FileReader(file));
@@ -28,21 +28,39 @@ public class AcoTest{
 			   records++;
 		   }
 		
-		corrMatrix = generateCorrMatrix(inputMatrix);
-		
-		//*********to print correlation matrix**********************
-		for (int i = 0; i < corrMatrix.getRowDimension(); i++) {
-	        System.out.println(corrMatrix.getRowVector(i));
-	    }  
+		corrArray= generateCorrArray(inputMatrix);
+		//*********REMEMBER : corrArray[i][j] = the correlation element between feature i and j*****
+		for(int i=0;i< corrArray.length;i++)
+		{
+			for(int j=0;j<corrArray[i].length;j++)
+			{
+				System.out.print(Math.round (corrArray[i][j] * 100.0) / 100.0);
+				System.out.print(" ");
+			}
+			System.out.println(" ");
+		}
 	}
 	
 	//*******************Generating Correlation Matrix**********************************
-	public static RealMatrix generateCorrMatrix(double inputArray[][]) throws Exception
+	public static double[][] generateCorrArray(double inputArray[][]) throws Exception
 	{
 		PearsonsCorrelation pc = new PearsonsCorrelation();
 		RealMatrix input =new Array2DRowRealMatrix(inputArray);
 		RealMatrix corr;
 		corr  = pc.computeCorrelationMatrix(input);
-		return corr;
+		double correlationArray[][] = corr.getData();
+		
+		//********check 1: Printing the correlation matrix which is stored in an array ********
+		/*for(int i=0;i< correlationArray.length;i++)
+		{
+			for(int j=0;j<correlationArray[i].length;j++)
+			{
+				System.out.print(Math.round (correlationArray[i][j] * 100.0) / 100.0);
+				System.out.print(" ");
+			}
+			System.out.println(" ");
+		}
+		*/
+		return correlationArray ;
 	}
 }
