@@ -1,0 +1,31 @@
+from pyspark import SparkContext
+# $example on$
+from pyspark.mllib.classification import NaiveBayes, NaiveBayesModel
+from pyspark.mllib.util import MLUtils
+from pyspark.mllib.linalg import Vectors
+from pyspark.mllib.regression import LabeledPoint
+import numpy as np
+from pyspark.mllib.linalg import SparseVector
+
+
+sc = SparkContext(appName="PythonNaiveBayesExample")
+
+    # $example on$
+    # Load and parse the data file.
+data = sc.textFile( "train_data.csv").filter(lambda line: len(line)<=760).collect()
+    #print(np.array(data).tolist())#data=data.map(lambda line: line.split(",")).collect()
+label=sc.textFile( "train_labels.csv").map(lambda line: line.split(",")).filter(lambda line: len(line)<=1).map(lambda line: float(line[0])).collect()
+print(label," ")
+    # Split data approximately into training (60%) and test (40%)
+ #   training, test = data.randomSplit([0.6, 0.4])
+test= sc.textFile( "test_data.csv").map(lambda line: line.split(",")).collect()
+
+testlabel= sc.textFile("test_labels.csv").map(lambda line: line.split(",")).collect()
+# Train a naive Bayes model.
+training=LabeledPoint(label,data)
+model = NaiveBayes.train(training)
+
+    # Make prediction and test accuracy.
+predictionAndLabel = testFloat.map(lambda p: (model.predict(p.features), p.LabelFloat))
+accuracy = 1.0 * predictionAndLabel.filter(lambda pl: pl[0] == pl[1]).count() / test.count()
+print('model accuracy {}'.format(accuracy))
