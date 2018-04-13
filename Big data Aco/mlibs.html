@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<title>Mlibs Algorithms</title>
+<style>
+body {
+	background-color: powderblue;
+	}
+h1   {
+	color: blue; 
+	font-size:30px; 
+	font-family:verdana; 
+	text-align:center;
+	}
+h2   {
+	color: blue; 
+	font-size:20px; 
+	font-family:verdana; 
+	text-align:center;
+	}
+h3   {
+	color: blue; 
+	font-size:20px; 
+	font-family:verdana; 
+	text-align:center;
+	}
+p    {
+	color: black; 
+	font-family:verdana; 
+	background-color:white;
+	}
+p {
+    border: 1px solid powderblue;
+	}
+p {
+    border: 1px solid powderblue;
+    padding: 30px;
+	}
+p {
+    border: 1px solid powderblue;
+    margin: 50px;
+	}
+</style>
+</head>
+<body>
+<h1>Mlibs Algorithms</h1>
+<h2>Naive Bayes</h2>
+<p>#****** importing libraries that the pyspark need to run*******  <br>
+from pyspark import SparkContext <br>
+from pyspark.ml.classification import NaiveBayes <br>
+from pyspark.ml.evaluation import MulticlassClassificationEvaluator <br>
+from pyspark.mllib.util import MLUtils <br>
+from pyspark.mllib.linalg import Vectors <br>
+from pyspark.mllib.regression import LabeledPoint <br>
+import numpy as np <br>
+from pyspark.sql import SparkSession <br>
+from pyspark import SparkContext <br>
+from pyspark.ml.linalg import Vectors, VectorUDT <br>
+
+#**** Intializing the spark context***** <br> 
+sc = SparkContext(appName="PythonNaiveBayesExample") <br>
+# ******Reading the files and spliting them using comma*******  <br>
+data = sc.textFile( "train_data.csv").map(lambda line: line.split(",")).filter(lambda line: len(line)<=760).collect() <br>
+label=sc.textFile( "train_labels.csv").map(lambda line: line.split(",")).filter(lambda line: len(line)<=1).map(lambda line: float(line[0])).collect() <br>
+test= sc.textFile( "test_data.csv").map(lambda line: line.split(",")).collect()     <br>
+testlabel= sc.textFile("test_labels.csv").map(lambda line: line.split(",")).collect()   <br> 
+#********Converting the data into RDD******** <br>
+data_rdd=sc.parallelize(data) <br>
+labels_rdd=sc.parallelize(label) <br>
+labeled_points_rdd= data_rdd.map(lambda seq:(float(seq[-1]),Vectors.dense(seq[:-1]))) <br>
+#********** Converting the RDD data into DataFrame <br>
+spark = SparkSession(sc) <br>
+hasattr(labeled_points_rdd, "toDF") <br>
+#labeled_points_rdd.toDF().show() <br>
+data_labels=spark.createDataFrame(labeled_points_rdd) <br>
+df = data_labels.selectExpr("_1 as label", "_2 as features") <br>
+print(df.show(5)) <br>
+#******* Giving the model as Naive Bayes and modelType ="multinomial <br>
+nb = NaiveBayes(smoothing=1.0, modelType="multinomial") <br>
+model = nb.fit(df) <br>
+    
+    # Make prediction and test accuracy. <br>
+predictionAndLabel = testFloat.map(lambda p: (model.predict(p.features), p.LabelFloat)) <br>
+accuracy = 1.0 * predictionAndLabel.filter(lambda pl: pl[0] == pl[1]).count() / test.count() <br>
+print('model accuracy {}'.format(accuracy)) <br>
+
+</br>
+</p>
+<h3>Decision Trees</h3>
+<p>#********Importing the pyspark statement <br>
+from pyspark import SparkContext <br>
+from pyspark.ml import Pipeline <br>
+from pyspark.ml.classification import DecisionTreeClassifier <br>
+from pyspark.ml.feature import StringIndexer, VectorIndexer <br>
+from pyspark.ml.evaluation import MulticlassClassificationEvaluator <br>
+from pyspark.sql import SparkSession <br>
+from pyspark import SparkContext <br>
+from pyspark.ml.linalg import Vectors, VectorUDT <br>
+from pyspark.mllib.evaluation import MultilabelMetrics <br>
+#********* Intializing the spark context <br>
+sc = SparkContext(appName="DecisionTreeClassifier") <br>
+#*********** Reading the whole file and spliting the data by , <br>
+data = sc.textFile( "train_data.csv").map(lambda line: line.split(",")).filter(lambda line: len(line)<=760).collect() <br>
+label=sc.textFile( "train_labels.csv").map(lambda line: line.split(",")).filter(lambda line: len(line)<=1).map(lambda line: float(line[0])).collect() <br>
+test= sc.textFile( "test_data.csv").map(lambda line: line.split(",")).filter(lambda line: len(line)<=760).collect() <br>
+testlabel= sc.textFile("test_labels.csv").map(lambda line: line.split(",")).filter(lambda line: len(line)<=1).map(lambda line: float(line[0])).collect()   <br> 
+#****************** Converting the data into RDD format  <br>
+data_rdd=sc.parallelize(data) <br>
+test_rdd=sc.parallelize(test) <br>
+testlabels_rdd= test_rdd.map(lambda seq:(float(seq[-1]),Vectors.dense((seq[:-2])))) <br>
+labeled_points_rdd= data_rdd.map(lambda seq:(float(seq[-1]),Vectors.dense((seq[:-2])))) <br>
+#******** creating the spark session to convert RDD into Dataframe <br>
+spark = SparkSession(sc) <br>
+hasattr(testlabels_rdd, "toDF") <br>
+hasattr(labeled_points_rdd, "toDF") <br>
+test_labels=spark.createDataFrame(testlabels_rdd) <br>
+data_labels=spark.createDataFrame(labeled_points_rdd) <br>
+data = data_labels.selectExpr("_1 as label", "_2 as features") <br>
+test_labels = test_labels.selectExpr("_1 as label", "_2 as features") <br>
+print(data.show(5)) <br>
+print(test_labels.show(5)) <br>
+
+# Assinging the training and testing models <br>
+trainingData = data <br>
+testingData = test_labels <br>
+print("fitting data") <br>
+labelIndexer = StringIndexer(inputCol="label", outputCol="indexedLabel").fit(data) <br>
+featureIndexer =VectorIndexer(inputCol="features", outputCol="indexedFeatures").fit(data) <br>
+# **************Train a DecisionTree model. <br>
+dt = DecisionTreeClassifier(labelCol="indexedLabel", featuresCol="indexedFeatures") <br>
+# ****************Chain indexers and tree in a Pipeline <br>
+pipeline = Pipeline(stages=[labelIndexer, featureIndexer, dt]) <br>
+print("train") <br>
+# **************Train model.  This also runs the indexers. <br>
+model = pipeline.fit(trainingData) <br>
+print("testing") <br>
+# ***********Make predictions. <br>
+predictions = model.transform(testingData) <br>
+#predictionsIndexer = StringIndexer(inputCol="prediction", outputCol="prediction1").fit(predictions).transform(predictions) <br>
+# Select example rows to display. <br>
+predictions.select("label","prediction","features").show(5) <br>
+evaluator = MulticlassClassificationEvaluator(labelCol="indexedLabel", predictionCol="label", metricName="accuracy") <br>
+# Select (prediction, true label) and compute test error <br>
+accuracy = evaluator.evaluate(predictions) <br>
+print("Accuracy = %g " % (accuracy)) <br>
+
+</br>
+</p>
+<br><a href="home.html" title=“miles”>Go to Home page</a></br>
+</body>
+</html>
