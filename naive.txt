@@ -21,8 +21,8 @@ label=sc.textFile( "train_labels.csv").map(lambda line: line.split(",")).filter(
     # Split data approximately into training (60%) and test (40%)
  #   training, test = data.randomSplit([0.6, 0.4])
 test= sc.textFile( "test_data.csv").map(lambda line: line.split(",")).collect()
-
-testlabel= sc.textFile("test_labels.csv").map(lambda line: line.split(",")).collect()
+    
+testlabel= sc.textFile("test_labels.csv").map(lambda line: line.split(",")).collect()   
 data_rdd=sc.parallelize(data)
 labels_rdd=sc.parallelize(label)
 labeled_points_rdd= data_rdd.map(lambda seq:(float(seq[-1]),Vectors.dense(seq[:-1])))
@@ -34,7 +34,7 @@ df = data_labels.selectExpr("_1 as label", "_2 as features")
 print(df.show(5))
 nb = NaiveBayes(smoothing=1.0, modelType="multinomial")
 model = nb.fit(df)
-
+    
     # Make prediction and test accuracy.
 predictionAndLabel = testFloat.map(lambda p: (model.predict(p.features), p.LabelFloat))
 accuracy = 1.0 * predictionAndLabel.filter(lambda pl: pl[0] == pl[1]).count() / test.count()
