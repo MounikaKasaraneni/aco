@@ -26,10 +26,10 @@ public class AcoTest{
 		
 		double inputMatrix[][] = new double[11][9];
 		
-		File file = new File("C:\\Users\\HP\\eclipse-workspace\\aco\\src\\aco\\train_data.csv");
+		File file = new File("train_data_test.csv");
 		@SuppressWarnings("resource")
 		BufferedReader reader = new BufferedReader(new FileReader(file));
-		//*********************************Reading File and Storing in 2D array***************
+//*********************************Reading File and Storing in 2D array***************
 		   while ((line = reader.readLine()) != null) {
 			   String[] words = line.split(",");
 			   for( int i=0;i<features;i++) {
@@ -41,17 +41,6 @@ public class AcoTest{
 //****CORRELATION******************
 		corrArray= generateCorrArray(inputMatrix);
 		//*********REMEMBER : corrArray[i][j] = the correlation element between feature i and j*****
-		/*********** just a check **************88
-		for(int i=0;i< corrArray.length;i++)
-		{
-			for(int j=0;j<corrArray[i].length;j++)
-			{
-				System.out.print(Math.round (corrArray[i][j] * 100.0) / 100.0);
-				System.out.print(" ");
-			}
-			System.out.println(" ");
-		}
-		*/
 		
 //******PHEROMONE*************
 		
@@ -62,17 +51,6 @@ public class AcoTest{
 		else
 		{
 			pheromone = updatePheromone(pheromone, corrArray, features);
-			
-			/*********************** Just a CHECK ************************8
-			/*for(int i=0;i< pheromone.length;i++)
-			{
-				for(int j=0;j<pheromone[i].length;j++)
-				{
-					System.out.print(Math.round (pheromone[i][j] * 100.0) / 100.0);
-					System.out.print(" ");
-				}
-				System.out.println(" ");
-			}*/
 		}
 		
 //*********GENERATE ANTS, RELEASE ANTS ******		
@@ -92,7 +70,16 @@ public class AcoTest{
 		
 		for(int i=0;i<numberOfAnts;i++)
 		{
+			System.out.println("\n"+"source node= " + antSource[i]);
+			System.out.println("destination node = "+ destination);;
 			setOfFeature= getFeatureSubSet(antSource[i], destination);
+			System.out.println("traversed path: "+"\n");
+			for(int j=0;j<setOfFeature.size();j++)
+			{
+				System.out.print(" "+ setOfFeature.get(j));
+			}
+			System.out.println("\n"+"/////////////////////////////");
+			
 			subset.add(setOfFeature);
 		}
 		round ++;
@@ -108,17 +95,6 @@ public class AcoTest{
 		corr  = pc.computeCorrelationMatrix(input);
 		double correlationArray[][] = corr.getData();
 		
-		//********check 1: Printing the correlation matrix which is stored in an array ********
-		/*for(int i=0;i< correlationArray.length;i++)
-		{
-			for(int j=0;j<correlationArray[i].length;j++)
-			{
-				System.out.print(Math.round (correlationArray[i][j] * 100.0) / 100.0);
-				System.out.print(" ");
-			}
-			System.out.println(" ");
-		}
-		*/
 		return correlationArray ;
 	}
 	
@@ -209,15 +185,11 @@ public class AcoTest{
 		remainingFeatures.remove(source);
 		traversedFeatures.add(source);
 		
+		//Loop to find next node to traverse till the destination is reached
 		do{
 			nextFeature = getNextNode(source, remainingFeatures);
 			traversedFeatures.add(nextFeature);
 			
-			System.out.println(" ");
-			for(int i=0;i<traversedFeatures.size();i++)
-			{
-				System.out.print(" "+ traversedFeatures.get(i));
-			}
 			if(nextFeature == dest)
 			{
 				subset = traversedFeatures;
