@@ -1,23 +1,27 @@
 
-from __future__ import print_function
-
 from pyspark import SparkContext
-from pyspark.mllib.util import MLUtils
-from pyspark.mllib.linalg import Vectors
 from pyspark.mllib.classification import LogisticRegressionWithLBFGS, LogisticRegressionModel
-from pyspark.mllib.classification import LogisticRegressionWithSGD, LogisticRegressionModel
 from pyspark.mllib.regression import LabeledPoint
-from pyspark.mllib.linalg import SparseVector
 
-if __name__ == "__main__":
-	sc = SparkContext(appName="PythonLRExample")
-	
-	#data = sc.textFile("/home/mkasara/project/file.txt")
-	examples = MLUtils.loadLibSVMFile(sc, "file.txt")
 
-	# Build the model
-	model = LogisticRegressionWithLBFGS.train(examples)
-	#lrm = LogisticRegressionWithSGD.train(sc.parallelize(examples), iterations=10)
+sc = SparkContext(appName="SVM")
+
+# Split the data into training and test sets (30% held out for testing)
+
+def parsePoint(line):
+    values = [float(x) for x in line.split(',')]
+    return LabeledPoint(values[0], values[1:])
+
+data = sc.textFile("train_data.csv")
+parsedData = data.map(parsePoint)
+testdata = sc.textFile("test_data.csv")
+testData1 = testdata.map(parsePoint)
+# Build the model
+model = LogisticRegressionWithLBFGS.train(parsedData)
+predictions = model.predict(testData1.map(lambda x: x.features))
+labelsAndPredictions = testData1.map(lambda lp: lp.label).zip(predictions)
+testErr = labelsAndPredictions.filter(lambda lp: lp[0] == lp[1]).count() / float(testData1.count())
+print('Accuracy = %f '%testErr)
 
 
 
