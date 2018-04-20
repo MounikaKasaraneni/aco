@@ -1,50 +1,102 @@
-  
-  public class TwoDArrayWritables extends TwoDArrayWritable
-{
-    public TwoDArrayWritables() {
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.*;
+import org.apache.hadoop.conf.*;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.io.WritableComparable;
+import java.io.IOException;
+import java.util.*;
+import org.apache.hadoop.mapred.*;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
+import org.apache.hadoop.io.DoubleWritable;
+//import mywritable.DoubleArrayWritable;
+
+
+
+public class acomr{
+	//****************2D ARRAY*********************************************************
+	public static class DoubleArrayWritable extends ArrayWritable {
+ public DoubleArrayWritable() {
+  super(DoubleWritable.class);
+ }
+}
+	public static class TwoDArrayWritables extends TwoDArrayWritable
+	{
+		 public TwoDArrayWritables() {
         super(DoubleWritable.class);
 
     }
     public TwoDArrayWritables(Class valueClass) {
         super(valueClass);
+	}
+	}
+	public static class MapDischarges extends Mapper<LongWritable, Text,IntWritable, TwoDArrayWritable >
+	{	
+		TwoDArrayWritables array2d = new TwoDArrayWritables();
+		PearsonsCorrelation pc = new PearsonsCorrelation();
+		double [][] inputMatrix = new double [11][9];
+		IntWritable pair= new IntWritable(1);
+		double [][] correlationArray = new double [11][9];
 
-    }
-  public class JaccardMapper extends Mapper<LongWritable, Text, IntWritable, TwoDArrayWritables> {
-  
-  TwoDArrayWritables array2d = new TwoDArrayWritables();
-  PearsonsCorrelation pc = new PearsonsCorrelation();
-   DoubleWritable[][] inputMatrix = new DoubleWritable[][];
-   IntWritable pair= new IntWritable(1);
-   DoubleWritable[][] correlationArray = new DoubleWritable[][];
- public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException
-    {
-    String  line=value.toString();
-	int record=0;
-	while(line!=Null)
-	{
-	String[] words = line.split(",");
-			   for( int i=0;i<760;i++) {
-				   inputMatrix[record][i] =  Double.parseDouble(words[i]);
+		public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException
+		{
+			String line = value.toString();
+			String[] words = line.split(",");
+		
+			int record=0;
+			//while(line!= NULL)
+			//{
+				for( int i=0;i<760;i++) {
+				   inputMatrix[record][i] = Double.parseDouble(words[i]);
 				   record++;
 			   }
-}
-			    array2d.set(inputMatrix);
-				corr  = pc.computeCorrelationMatrix(array2d);
-				correlationArray[][] = corr.getData();
-				array2d.set(correlationArray)
-                context.write(pair, array2d);
-			   }
-			   }
-			   
-			   
-			   
-			  
-public class JaccardMapper extends Mapper<LongWritable, Text, IntWritable, TwoDArrayWritables> {
-			  
-			   public void reduce(IntTextPair key, TwoDArrayWritables values, Context context) throws IOException, InterruptedException
-    {
+			//}
+			//array2d.set(inputMatrix);
+			RealMatrix corr;
+			corr  = pc.computeCorrelationMatrix(inputMatrix);
+			correlationArray = corr.getData();
+			
+			DoubleArrayWritable carray2 = new DoubleArrayWritable(correlationArray);
+			//carray2.set(correlationArray);
+			//TwoDArrayWritables array2d = new TwoDArrayWritables(correlationArray);
+			array2d.set(carray2);
+			
+               context.write(pair, array2d);			
+		}
+	}
 
-context.write(key,values)
-      
-}
+
+	// *********************************REDUCER CLASS ***************************************************************
+	public static class ReduceDischarges extends Reducer<IntWritable, TwoDArrayWritable ,IntWritable, TwoDArrayWritable >
+	{
+		
+		public void reduce(IntWritable key, TwoDArrayWritable values, Context context)throws IOException, InterruptedException
+		{
+			context.write(key,values);
+		}
+	}
+	
+	//************************************DRIVER CLASS *************************************************************************8
+	public static void main(String [] args) throws Exception
+	{
+		Configuration conf = new Configuration();
+		Job job = Job.getInstance(conf, "mounika_kasaraneni_Program1");
+        job.setJarByClass(acomr.class);
+		//setting the mapper , reducer class and output key and value class 
+        job.setMapperClass(MapDischarges.class);
+        job.setReducerClass(ReduceDischarges.class);
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(IntWritable.class);
+		// setting input and output paths
+        FileInputFormat.addInputPath(job, new Path(args[0]));
+        FileOutputFormat.setOutputPath(job, new Path(args[1]));
+        System.exit(job.waitForCompletion(true) ? 0 : 1);
+	}
 }
