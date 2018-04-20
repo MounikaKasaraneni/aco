@@ -39,11 +39,11 @@ public class acomr{
 	}
 	public static class MapDischarges extends Mapper<Object, Text,IntWritable, TwoDArrayWritable >
 	{	
+		ArrayList<ArrayList<Double>> array1 = new ArrayList<ArrayList<Double>>();
+		ArrayList<Double> subList = new ArrayList<Double>();
 		TwoDArrayWritables array2d = new TwoDArrayWritables();
-		PearsonsCorrelation pc = new PearsonsCorrelation();
-		double [][] inputMatrix = new double [11][10];
-		IntWritable pair= new IntWritable(1);
-		double [][] correlationArray = new double [11][10];
+		
+		
 
 		public void map(Object key, Text value, Context context) throws IOException, InterruptedException
 		{
@@ -52,35 +52,45 @@ public class acomr{
 			
 		
 			int record=0;
-			//while(line.)
-			//{
-				//for( int i=0;i<11;i++) {
-					for(int j=0;j<words.length;j++)
-					{
-					
-				   inputMatrix[i][j] = Double.parseDouble(words[j]);
-					}
-			//   }
-			   record++;
-			//}
-			
-			//array2d.set(inputMatrix);
-			RealMatrix corr;
-			corr  = pc.computeCorrelationMatrix(inputMatrix);
-			correlationArray = corr.getData();
-		
-			TwoDArrayWritable array = new TwoDArrayWritable (DoubleWritable.class);
-            DoubleWritable[][] myInnerArray = new DoubleWritable[11][9];
-                     // set values in myInnerArray
-            for (int k1 = 0; k1 < 11; k1++) {
-                    for(int j1=0;j1< 9;j1++){
-                            myInnerArray[k1][j1] = new DoubleWritable(correlationArray[k1][j1]);
-            }
+			for(int j=0;j<words.length;j++)
+			{
+				subList.add(Double.parseDouble(words[j]));
 			}
-             array.set(myInnerArray);
-             		
+			array1.add(subList);
 			
-               context.write(pair, array);			
+			int columns= subList.size();
+			int rows= array1.size();
+			double [][] inputMatrix = new double [rows][columns];
+			IntWritable pair= new IntWritable(1);
+			
+			ArrayList<Double> subList2 = new ArrayList<Double>();
+			for(int i=0;i<rows;i++)
+			{
+				subList2 = array1.get(i);
+				for(int j=0;j<columns;j++)
+				{
+					inputMatrix[i][j]= subList2.get(j);
+					
+				}
+			}
+			//array2d.set(inputMatrix);
+			//try{
+				PearsonsCorrelation pc = new PearsonsCorrelation();
+				RealMatrix input =new Array2DRowRealMatrix(inputMatrix);
+				RealMatrix corr;
+				corr  = pc.computeCorrelationMatrix(input);
+				double correlationArray[][] = corr.getData();
+			//}catch(Exception e)
+			TwoDArrayWritable array = new TwoDArrayWritable (DoubleWritable.class);
+            DoubleWritable[][] myInnerArray = new DoubleWritable[rows][columns];
+                     // set values in myInnerArray
+            for (int k1 = 0; k1 < rows; k1++) {
+                for(int j1=0;j1<columns;j1++){
+                    myInnerArray[k1][j1] = new DoubleWritable(correlationArray[k1][j1]);
+				}
+			}
+            array.set(myInnerArray);
+            context.write(pair, array);			
 		}
 	}
 
@@ -107,7 +117,7 @@ public class acomr{
         job.setOutputKeyClass(IntWritable.class);
         job.setOutputValueClass(TwoDArrayWritable.class);
 		job.setMapOutputKeyClass(IntWritable.class);
-job.setMapOutputValueClass(TwoDArrayWritable.class);
+		job.setMapOutputValueClass(TwoDArrayWritable.class);
 		// setting input and output paths
         FileInputFormat.addInputPath(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
