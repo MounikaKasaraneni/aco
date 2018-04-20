@@ -1,0 +1,50 @@
+  
+  public class TwoDArrayWritables extends TwoDArrayWritable
+{
+    public TwoDArrayWritables() {
+        super(DoubleWritable.class);
+
+    }
+    public TwoDArrayWritables(Class valueClass) {
+        super(valueClass);
+
+    }
+  public class JaccardMapper extends Mapper<LongWritable, Text, IntWritable, TwoDArrayWritables> {
+  
+  TwoDArrayWritables array2d = new TwoDArrayWritables();
+  PearsonsCorrelation pc = new PearsonsCorrelation();
+   DoubleWritable[][] inputMatrix = new DoubleWritable[][];
+   IntWritable pair= new IntWritable(1);
+   DoubleWritable[][] correlationArray = new DoubleWritable[][];
+ public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException
+    {
+    String  line=value.toString();
+	int record=0;
+	while(line!=Null)
+	{
+	String[] words = line.split(",");
+			   for( int i=0;i<760;i++) {
+				   inputMatrix[record][i] =  Double.parseDouble(words[i]);
+				   record++;
+			   }
+}
+			    array2d.set(inputMatrix);
+				corr  = pc.computeCorrelationMatrix(array2d);
+				correlationArray[][] = corr.getData();
+				array2d.set(correlationArray)
+                context.write(pair, array2d);
+			   }
+			   }
+			   
+			   
+			   
+			  
+public class JaccardMapper extends Mapper<LongWritable, Text, IntWritable, TwoDArrayWritables> {
+			  
+			   public void reduce(IntTextPair key, TwoDArrayWritables values, Context context) throws IOException, InterruptedException
+    {
+
+context.write(key,values)
+      
+}
+}
