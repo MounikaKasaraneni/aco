@@ -37,38 +37,50 @@ public class acomr{
         super(valueClass);
 	}
 	}
-	public static class MapDischarges extends Mapper<LongWritable, Text,IntWritable, TwoDArrayWritable >
+	public static class MapDischarges extends Mapper<Object, Text,IntWritable, TwoDArrayWritable >
 	{	
 		TwoDArrayWritables array2d = new TwoDArrayWritables();
 		PearsonsCorrelation pc = new PearsonsCorrelation();
-		double [][] inputMatrix = new double [11][9];
+		double [][] inputMatrix = new double [11][10];
 		IntWritable pair= new IntWritable(1);
-		double [][] correlationArray = new double [11][9];
+		double [][] correlationArray = new double [11][10];
 
-		public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException
+		public void map(Object key, Text value, Context context) throws IOException, InterruptedException
 		{
 			String line = value.toString();
 			String[] words = line.split(",");
+			
 		
 			int record=0;
-			//while(line!= NULL)
+			//while(line.)
 			//{
-				for( int i=0;i<760;i++) {
-				   inputMatrix[record][i] = Double.parseDouble(words[i]);
-				   record++;
-			   }
+				//for( int i=0;i<11;i++) {
+					for(int j=0;j<words.length;j++)
+					{
+					
+				   inputMatrix[i][j] = Double.parseDouble(words[j]);
+					}
+			//   }
+			   record++;
 			//}
+			
 			//array2d.set(inputMatrix);
 			RealMatrix corr;
 			corr  = pc.computeCorrelationMatrix(inputMatrix);
 			correlationArray = corr.getData();
+		
+			TwoDArrayWritable array = new TwoDArrayWritable (DoubleWritable.class);
+            DoubleWritable[][] myInnerArray = new DoubleWritable[11][9];
+                     // set values in myInnerArray
+            for (int k1 = 0; k1 < 11; k1++) {
+                    for(int j1=0;j1< 9;j1++){
+                            myInnerArray[k1][j1] = new DoubleWritable(correlationArray[k1][j1]);
+            }
+			}
+             array.set(myInnerArray);
+             		
 			
-			DoubleArrayWritable carray2 = new DoubleArrayWritable(correlationArray);
-			//carray2.set(correlationArray);
-			//TwoDArrayWritables array2d = new TwoDArrayWritables(correlationArray);
-			array2d.set(carray2);
-			
-               context.write(pair, array2d);			
+               context.write(pair, array);			
 		}
 	}
 
@@ -92,8 +104,10 @@ public class acomr{
 		//setting the mapper , reducer class and output key and value class 
         job.setMapperClass(MapDischarges.class);
         job.setReducerClass(ReduceDischarges.class);
-        job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(IntWritable.class);
+        job.setOutputKeyClass(IntWritable.class);
+        job.setOutputValueClass(TwoDArrayWritable.class);
+		job.setMapOutputKeyClass(IntWritable.class);
+job.setMapOutputValueClass(TwoDArrayWritable.class);
 		// setting input and output paths
         FileInputFormat.addInputPath(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
