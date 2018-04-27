@@ -78,9 +78,10 @@ public class acomr{
 		ArrayList<ArrayList<Double>> array1 = new ArrayList<ArrayList<Double>>();
 		ArrayList<Double> subList = new ArrayList<Double>();
 		IntArrayWritable outputArray = new IntArrayWritable();
-		static List<Integer>featureArray = new ArrayList<Integer>();
+		
 		static int destination = 8;
-
+		IntWritable outputKey = new IntWritable();
+			int k=0;
 		public void map(Object key, Text value, Context context) throws IOException, InterruptedException
 		{
 			String line = value.toString();
@@ -93,7 +94,8 @@ public class acomr{
 			}
 			array1.add(subList);
 			
-			int columns= subList.size();
+		//	int columns= subList.size(); 
+		int columns =9;
 			int rows= array1.size();
 			double [][] inputMatrix = new double [rows][columns];
 			IntWritable pair= new IntWritable(1);
@@ -110,18 +112,7 @@ public class acomr{
 				}
 			}
 			
-			for(int i=0;i<columns;i++)
-			{
-				featureArray.add(i);
-			}
-			/*
-			PearsonsCorrelation pc = new PearsonsCorrelation();
-			RealMatrix input =new Array2DRowRealMatrix(inputMatrix);
-			RealMatrix corr;
-			corr  = pc.computeCorrelationMatrix(input);
-			double correlationArray[][] = corr.getData();
-			//}catch(Exception e)
-			*/
+			
 			
 			//Initializing pheromone
 			double pheromone[][] = new double[columns][columns];
@@ -130,6 +121,7 @@ public class acomr{
 			
 			//*********GENERATE ANTS, RELEASE ANTS ******		
 			int numberOfAnts = columns - 1;
+			int numAnts[] = new int[columns-1];
 			int antSource[] = new int[numberOfAnts];
 			for(int i=0 ; i< numberOfAnts ; i++)
 			{
@@ -143,10 +135,12 @@ public class acomr{
 			for(int i = 0; i < numberOfAnts; i++)  {
 				subset.add(new ArrayList<Integer>());
 			}
-		
+			
+		/*
 			for(int i=0;i<numberOfAnts;i++)
 			{
-				setOfFeature= getFeatureSubSet(antSource[i], destination, pheromone);
+				//k = i;
+				setOfFeature= getFeatureSubSet(antSource[i], destination, pheromone, inputMatrix, columns);
 				IntWritable [] array2 = new IntWritable[setOfFeature.size()];
 			
 				//rewriting the input to be sent int the form of hadoop writable		
@@ -154,9 +148,28 @@ public class acomr{
 					array2[k1] = new IntWritable(setOfFeature.get(k1));
 				}
 				outputArray.set(array2);
-				context.write(new IntWritable(i), outputArray);
+				
 			}
 			
+			for(int i=0;i<antSource.length;i++)
+			{
+				outputKey.set(antSource[i]);
+			}
+			
+				
+			context.write(outputKey, outputArray);
+			*/
+			
+			setOfFeature= getFeatureSubSet(antSource[k], destination, pheromone, inputMatrix, columns);
+			IntWritable [] array2 = new IntWritable[setOfFeature.size()];
+			for (int k1 = 0; k1 < setOfFeature.size(); k1++) {
+					array2[k1] = new IntWritable(setOfFeature.get(k1));
+				}
+		
+			outputArray.set(array2);
+				outputKey.set(k);
+			context.write(outputKey, outputArray);	
+			k++;
 			
 		}
 		
@@ -174,7 +187,7 @@ public class acomr{
 			return pheromone;
 		}
 	
-		public static int getNextNode(int sourceNode, List<Integer> remainingNodes, double pheromone[][])
+		public static int getNextNode(int sourceNode, List<Integer> remainingNodes, double pheromone[][], double[][] corrArray)
 		{
 			double lower=0.0,upper=0.0;
 			int nextNode;
@@ -218,20 +231,25 @@ public class acomr{
 	
 		//***********GET SUBSET OF FEATURES FOR ONE ANT **********
 	
-		public static List<Integer> getFeatureSubSet(int source,int dest,  double pheromone[][])
+		public static List<Integer> getFeatureSubSet(int source,int dest,  double pheromone[][],double[][]inputMatrix, int columns)
 		{
+			 List<Integer>featureA = new ArrayList<Integer>();
+			for(int i=0;i<columns;i++)
+			{
+				featureA.add(i);
+			}
 			List<Integer> traversedFeatures = new ArrayList<Integer>();// to keep track of already traversed features
-			List<Integer> remainingFeatures = new ArrayList<Integer>(8);// to keep track of possible remaining features to traverse
+			List<Integer> remainingFeatures = new ArrayList<Integer>(featureA.size());// to keep track of possible remaining features to traverse
 			List<Integer> subset = new ArrayList<Integer>();
 			int nextFeature;
 		
-			remainingFeatures.addAll(featureArray);
+			remainingFeatures.addAll(featureA);
 			remainingFeatures.remove(source);
 			traversedFeatures.add(source);
 		
 			//Loop to find next node to traverse till the destination is reached
 			do{
-				nextFeature = getNextNode(source, remainingFeatures, pheromone);
+				nextFeature = getNextNode(source, remainingFeatures, pheromone, inputMatrix);
 				traversedFeatures.add(nextFeature);
 			
 				if(nextFeature == dest)
@@ -287,3 +305,4 @@ public class acomr{
 	
 	
 }
+
