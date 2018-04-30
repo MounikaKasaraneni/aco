@@ -3,101 +3,80 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.util.*;
+import java.io.*;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 public class Aco{
 	 static int features=9;
 	static List<Integer>featureArray = new ArrayList<Integer>();
-	static double pheromone[][] = new double[features][features];
-	static double corrArray [][] = new double[features][features];
 	static int destination = 8;
 	public static void main(String []args) throws Exception
 	{
 		String line;
-		String line1;
+		int numFeatures=0;
+		String line1="";
+		String line2= "";
 		int records=0;
+		int records1 = 0;
 		int round = 1;
-		double inputMatrix[][] = new double[11][9];
-		if(round == 1)
-		{
-			// intilialzing the feature array by storing the numbers for features
-			for(int i=0;i<9;i++)
-			{
-				featureArray.add(i);
-			}
 		
-			// Reading the given data 
-			File file = new File("train_data_test.csv");
-			@SuppressWarnings("resource")
-			BufferedReader reader = new BufferedReader(new FileReader(file));
-			//*********************************Reading File and Storing in 2D array***************
-			   while ((line = reader.readLine()) != null) {
-				   String[] words = line.split(",");
-				   for( int i=0;i<features;i++) {
-					   inputMatrix[records][i] =  Double.parseDouble(words[i]);
-				   }
-				   records++;
-			   }	
+		File antRouteFeatures = new File("antRouteFeatures.txt");
+		File ant = new File("ant.txt");
+		
+			
+		// Reading the given data 
+		File file = new File(args[0]);
+		File file1 = new File(args[1]);
+		File file2 = new File(args[2]);
+			
+		@SuppressWarnings("resource")
+		BufferedReader reader = new BufferedReader(new FileReader(file));
+		//*********************************Reading Feature numbers and Storing in feature array***************
+		while ((line = reader.readLine()) != null) {
+			String[] words = line.split(",");
+		    for(int i=0;i<words.length;i++)
+			{
+				featureArray.add(Integer.parseInt(words[i]));
+				
+			}
 		}
-		else
-		{
-			File file1 = new File("train_data_test.csv");
+		
+		
+			numFeatures = featureArray.size();
+			double pheromone[][] = new double[numFeatures][numFeatures];
+		    double corrArray [][] = new double[numFeatures][numFeatures];
+			
 			@SuppressWarnings("resource")
 			BufferedReader reader1 = new BufferedReader(new FileReader(file1));
-			//*********************************Reading Feature numbers and Storing in feature array***************
-		   while ((line1 = reader1.readLine()) != null) {
-			   String[] words1 = line1.split(",");
-			   for(int i=0;i<words1.length;i++)
-				{
-					featureArray.add(i);
-				}
-			  
-		   }
-		
-		}
-		int numFeatures = featureArray.size();
-		/*
-		
-		
-		// for full dataset replace 11 with number of rows in data file
-		double inputMatrix[][] = new double[11][featureArray.size()];
-		
-		// get the specific columns from data set
-		
-		for(int r=0;r<11;r++)
-		{
-			for(int c=0;c<featureArray.size();c++)
-			{
-				inputMatrix[r][c] = dataMatrix[r][featureArray.get(c)];
-			}		
-		}
-		*/
-		
-//********************************************************************************************************************		
-		
-		
-
-//******PHEROMONE*************
-		
-		
-		if(round == 1) {
+			//*********************************Reading File and Storing in 2D array***************
+			while ((line1 = reader1.readLine()) != null) {
+				   String[] words1 = line1.split("\t");
+				   for( int i=0;i<numFeatures;i++) {
+					   corrArray[records][i] =  Double.parseDouble(words1[i]);
+				   }
+				   records++;
+			}	
+	
+			@SuppressWarnings("resource")
+			BufferedReader reader2 = new BufferedReader(new FileReader(file2));
+			//*********************************Reading File and Storing in 2D array***************
+			while ((line2 = reader2.readLine()) != null) {
+				   String[] words2 = line2.split("\t");
+				   for( int i=0;i<numFeatures;i++) {
+					   pheromone[records1][i] =  Double.parseDouble(words2[i]);
+				   }
+				   records1++;
+			}	
 			
-			//****CORRELATION******************
-			corrArray= generateCorrArray(inputMatrix);
-			pheromone = initializePheromone(760);
-		}
-		else
-		{
-			pheromone = updatePheromone(pheromone, corrArray, 760);
-		}
-		
+		    pheromone = updatePheromone(pheromone, corrArray, numFeatures);
+			
 //*********GENERATE ANTS, RELEASE ANTS ******		
 		int numberOfAnts = numFeatures - 1;
 		int antSource[] = new int[numberOfAnts];
 		for(int i=0 ; i< numberOfAnts ; i++)
 		{
-			antSource[i] = featureArray.get(i); /*************CHECK : Need to generate ants randomly not serially*/
+			antSource[i] = featureArray.get(i); 
 		}
 			
 //*********MAKE ANTS TRAVERSE FROM SOURCE TO DESTINATION and GET FEATURE SUBSET********
@@ -109,62 +88,65 @@ public class Aco{
 		
 		HashMap<String, List<Integer>> map = new HashMap<String, List<Integer>>();
 		
+		//antRouteFeatures.createNewFile();
+		FileWriter writer = new FileWriter(antRouteFeatures, false); 
+		BufferedWriter bw  = new BufferedWriter(writer);
+		PrintWriter pw = new PrintWriter(bw);
+		
+		FileWriter writer1 = new FileWriter(ant, false); 
+		BufferedWriter bw1  = new BufferedWriter(writer1);
+		PrintWriter pw1 = new PrintWriter(bw1);
+		
+		
 		
 		for(int i=0;i<numberOfAnts;i++)
 		{
-			System.out.println("\n"+"source node= " + antSource[i]);
-			System.out.println("destination node = "+ destination);;
-			setOfFeature= getFeatureSubSet(antSource[i], destination);
-			System.out.println("traversed path: "+"\n");
+			
+			setOfFeature= getFeatureSubSet(antSource[i], destination, pheromone, corrArray);
+			int x = antSource[i] + 1;
+			pw.print(x+":"); 
 			for(int j=0;j<setOfFeature.size();j++)
 			{
-				System.out.print(" "+ setOfFeature.get(j)); 
+				 
+				int y = setOfFeature.get(j) + 1;
+				pw.print(y);
+				pw1.print(y);
+				if(j<setOfFeature.size()-1)
+				{
+					pw.print(",");
+					pw1.print(",");
+				}
+				else
+				{
+					int z = j+1;
+					pw.print(":"+z);
+				}
 			}
-			System.out.println("\n"+"/////////////////////////////");
-			
+			pw.println(" ");
+			pw1.println(" ");	
 			subset.add(setOfFeature);
 		}
 		
 		
-		round ++;
+		
+		pw.flush();
+		pw.close();
+		pw1.flush();
+		pw1.close();
 		
 		
 	}
 	
 	
-	//*******************Generating Correlation Matrix**********************************
-	public static double[][] generateCorrArray(double inputArray[][]) throws Exception
-	{
-		PearsonsCorrelation pc = new PearsonsCorrelation();
-		RealMatrix input =new Array2DRowRealMatrix(inputArray);
-		RealMatrix corr;
-		corr  = pc.computeCorrelationMatrix(input);
-		double correlationArray[][] = corr.getData();
-		return correlationArray ;
-	}
 	
-	//*************************INITIALIZE PHEROMONE ******************************
-	
-	public static double[][] initializePheromone(int featureCount)
-	{
-		double pheromone[][] = new double[featureCount][featureCount];
-		for(int i=0;i<featureCount;i++)
-		{
-			for(int j=0;j<featureCount;j++)
-			{
-				pheromone[i][j] = 1;
-			}
-		}
-		return pheromone;
-	}
-	
+
 	
 	//*************************UPDATE PHEROMONE ******************************
 	
 	public static double[][] updatePheromone(double[][] pheromone, double[][] correlationArray, int featureCount)
 	{
 		double s = 0.01; 
-		for(int i=0 ; i< featureArray.size() ; i++)
+		for(int i=0 ; i< featureArray.size(); i++)
 		{
 			int x = featureArray.get(i);
 			for(int j=0;j<featureArray.size() ; j++)
@@ -177,7 +159,7 @@ public class Aco{
 	}
 	
 	//*****************CALUCULATING NEXT NODE TO TRAVERSE ***********************8
-	public static int getNextNode(int sourceNode, List<Integer> remainingNodes)
+	public static int getNextNode(int sourceNode, List<Integer> remainingNodes, double [][] pheromone, double [][] corrArray)
 	{
 		double lower=0.0,upper=0.0;
 		int nextNode;
@@ -219,7 +201,7 @@ public class Aco{
 	
 	//***********GET SUBSET OF FEATURES FOR ONE ANT **********
 	
-	public static List<Integer> getFeatureSubSet(int source,int dest)
+	public static List<Integer> getFeatureSubSet(int source,int dest, double [][] pheromone, double [][]corrArray)
 	{
 		List<Integer> traversedFeatures = new ArrayList<Integer>();// to keep track of already traversed features
 		List<Integer> remainingFeatures = new ArrayList<Integer>(featureArray.size());// to keep track of possible remaining features to traverse
@@ -231,7 +213,7 @@ public class Aco{
 		traversedFeatures.add(source);
 		
 		do{
-			nextFeature = getNextNode(source, remainingFeatures);
+			nextFeature = getNextNode(source, remainingFeatures, pheromone, corrArray);
 			traversedFeatures.add(nextFeature);
 			
 			
