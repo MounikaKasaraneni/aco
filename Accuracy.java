@@ -1,3 +1,4 @@
+//importing the required packages
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -11,12 +12,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
-
+// getting the highest accuracy out of one iteration
 public class Accuracies {
 static int count=0;
 static int i=0;
 	public static void main(String[] args) throws IOException {
-		 File file = new File("accuracyoutput.txt");
+		 File file = new File("accuracyoutput.txt"); 
 		  BufferedReader br = new BufferedReader(new FileReader(file));
 		   String st;
 	  List <Integer> newarray=new ArrayList<Integer>();
@@ -38,19 +39,19 @@ static int i=0;
 		{
 			System.out.println(accuracy[j]);
 		}
+		//getting the accuracies in the order
 		Arrays.sort(accuracy);
 		System.out.printf("Modified arr[] : %s",
                 Arrays.toString(accuracy));
 		int g=accuracy.length-1;
 		//System.out.println("\n"+g);
 		Double highest = Double.parseDouble(accuracy[g]);
-		//System.out.println(highest+"hifhg");
 		
 		double threshold = 3.0;
 		
 		double checkAccuracy = highest - threshold;
 		
-		//System.out.println(checkAccuracy);
+		//getting the accuracy value is for which ant
 		for(int i=0;i<accuracy.length;i++)
 		{
 		if(Double.parseDouble(accuracy[i])>=checkAccuracy)
@@ -73,6 +74,7 @@ static int i=0;
 
 		}
 		}
+		//printing the features without duplication from the selected ants accuracy
 		List<Integer> finalfeatures= newarray.stream().distinct().collect(Collectors.toList());
 		for(int i=0;i<finalfeatures.size();i++){
 		    System.out.println(finalfeatures.get(i));
