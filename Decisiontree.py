@@ -1,17 +1,20 @@
+#importing the packages that are required
 from pyspark import SparkContext
-# $example on$
 from pyspark.mllib.tree import DecisionTree, DecisionTreeModel
 from pyspark.mllib.util import MLUtils
 
+#Creating the spark context
 sc = SparkContext(appName="PythonDecisionTreeRegressionExample")
 
-# Split the data into training and test sets (30% held out for testing)
+# training the train data in in libsvm format
 trainingData = MLUtils.loadLibSVMFile(sc,"train_data1.txt")
+# loading the test data in libsvm format
 testData = MLUtils.loadLibSVMFile(sc,"test_data1.txt")
+#training the model for Decision trees
 model = DecisionTree.trainClassifier(trainingData, numClasses=12999, categoricalFeaturesInfo={},
                                      impurity='entropy', maxDepth=5, maxBins=32)
 
-# Evaluate model on test instances and compute test error
+# Evaluate model on test data and compute Accuracy
 predictions = model.predict(testData.map(lambda x: x.features))
 labelsAndPredictions = testData.map(lambda lp: lp.label).zip(predictions)
 testErr = labelsAndPredictions.filter(
