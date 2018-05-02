@@ -20,5 +20,15 @@ labelsAndPredictions = testData.map(lambda lp: lp.label).zip(predictions)
 testErr = labelsAndPredictions.filter(
     lambda lp: lp[0] == lp[1]).count() / float(testData.count())
 print('Accuracy = %f '%testErr)
+Accuracy=testErr*100
+print('Accuracy = %f '%Accuracy)
+# writing output to file
+file=open("accuracyoutput.txt",'a')
+file1=open("accuracyoutputgraphs.txt",'a')
+file.write(str(Accuracy))
+file.write("\n")
+file1.write(str(Accuracy))
+file1.write("\n")
+
 
 
