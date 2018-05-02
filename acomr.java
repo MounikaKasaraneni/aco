@@ -136,29 +136,7 @@ public class acomr{
 				subset.add(new ArrayList<Integer>());
 			}
 			
-		/*
-			for(int i=0;i<numberOfAnts;i++)
-			{
-				//k = i;
-				setOfFeature= getFeatureSubSet(antSource[i], destination, pheromone, inputMatrix, columns);
-				IntWritable [] array2 = new IntWritable[setOfFeature.size()];
-			
-				//rewriting the input to be sent int the form of hadoop writable		
-				for (int k1 = 0; k1 < setOfFeature.size(); k1++) {
-					array2[k1] = new IntWritable(setOfFeature.get(k1));
-				}
-				outputArray.set(array2);
-				
-			}
-			
-			for(int i=0;i<antSource.length;i++)
-			{
-				outputKey.set(antSource[i]);
-			}
-			
-				
-			context.write(outputKey, outputArray);
-			*/
+		
 			
 			setOfFeature= getFeatureSubSet(antSource[k], destination, pheromone, inputMatrix, columns);
 			IntWritable [] array2 = new IntWritable[setOfFeature.size()];
