@@ -79,7 +79,7 @@ public class corr{
 				}
 			}
 			
-		
+			// computing pearson correlation for input matrix
 			PearsonsCorrelation pc = new PearsonsCorrelation();
 			Array2DRowRealMatrix input =new Array2DRowRealMatrix(inputMatrix);
 			RealMatrix corr;
