@@ -10,7 +10,7 @@ public class InitializeAnts{
 	{
 		
 		Random rand = new Random();
-		
+		// output file initializeAnts.txt has the final set of features to be inputed to aco
 		File InitializeAnts = new File("InitializeAnts.txt");
 		
 		FileWriter writer1 = new FileWriter(InitializeAnts, false); 
