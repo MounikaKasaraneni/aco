@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<title>ACO Project</title>
+<style>
+body {
+	background-color: rgb(190, 228, 255);
+	}
+h1   {
+	color: black; 
+	font-size:30px; 
+	font-family:verdana; 
+	text-align:center;
+	}
+h2   {
+	color: black; 
+	font-size:20px; 
+	font-family:verdana; 
+	text-align:center;
+	}
+p    {
+	color: black; 
+	font-family:verdana; 
+	background-color:white;
+	}
+p1 {
+	Font-size:18px;
+	}
+p {
+    border: 1px solid powderblue;
+	}
+p {
+    border: 1px solid powderblue;
+    padding: 30px;
+	}
+p {
+    border: 1px solid powderblue;
+    margin: 50px;
+	}
+</style>
+</head>
+<body>
+<img src="https://www.terminix.com/static-srvm/trmx/blog-images/red-ants-marching-main.jpg" style="align:middle; width:1400px; height:300px;">
+<h1>Subset selection using ACO Algorithm</h1>
+<p>Ant Colony Optimization (ACO) algorithm, first introduced by Dorigo, is a bionic meta-heuristic algorithm stemming from the finding food process of natural ant colony. 
+In our context ACO is used to find feasible paths from the graphs. In this problem we are using ACO to find the best feature subset from all the features. </p>
+<a href="#ACO">ACO Algorithm</a>
+<br>
+</br>
+<a href="#mlibs">Mlibs algorithms to calculate accuracies</a>
+<br>
+</br>
+<a href="#accuracy">Accuracy</a>
+<br>
+</br>
+<a href="#deliverables">Deliverables</a>
+<br>
+</br>
+<a href="#output">Output of ACO Algorithm</a>
+<h2 id="ACO">ACO Algorithm</h2>
+<p1>ACO is used to find feasible paths from the graphs. In this problem we are using ACO to find the best feature subset from all the features.<br>
+<br>
+<b>Correlation Matrix:</b><br>
+Correlation Matrix is used to evaluate the relation between two or more variables. Here we are passing the train data to this code to calculate correlation matrix.</p1>
+<p><b>Correlation Matrix code</b><br>
+import java.io.BufferedReader;<br>
+import java.io.File;<br>
+import java.io.FileReader;<br>
+import java.util.*;<br>
+import java.io.*;<br>
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;<br>
+import org.apache.commons.math3.linear.RealMatrix;<br>
+import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;<br>
+public class Corr{<br>
+	static int features=760;<br>
+	static double corrArray [][] = new double[features][features];<br>
+	public static void main(String []args) throws Exception<br>
+	{<br>
+		String line;<br>
+		int records=0;<br>
+		File corrMatix = new File("corrMatrix.txt");<br>
+		double inputMatrix[][] = new double[34918][760];<br>
+		// intilialzing the feature array by storing the numbers for features<br>
+				
+			// Reading the given data <br>
+			File file = new File("train_data.csv");<br>
+			@SuppressWarnings("resource")<br>
+			BufferedReader reader = new BufferedReader(new FileReader(file));<br>
+			//*********************************Reading File and Storing in 2D array***************<br>
+			   while ((line = reader.readLine()) != null) {<br>
+				   String[] words = line.split(",");<br>
+				   for( int i=0;i<features;i++) {<br>
+					   inputMatrix[records][i] =  Double.parseDouble(words[i]);<br>
+				   }<br>
+				   records++;<br>
+			   }<br>	
+
+			//****CORRELATION******************<br>
+			corrArray= generateCorrArray(inputMatrix);<br>
+			FileWriter writer1 = new FileWriter(corrMatix, false);<br> 
+			BufferedWriter bw1  = new BufferedWriter(writer1);<br>
+			PrintWriter pw1 = new PrintWriter(bw1);<br>
+		<br>
+			for(int i=0;i<corrArray.length;i++)<br>
+			{<br>
+				for(int j=0;j<corrArray[i].length;j++)<br>
+				{<br>
+					if (Double.isNaN(corrArray[i][j]))<br>
+					{<br>
+						corrArray[i][j] = 0;<br>
+					}<br>
+					pw1.print(corrArray[i][j] +"\t");<br>
+				}<br>
+				pw1.println("");<br>
+			}<br>
+			
+			pw1.flush();<br>
+		pw1.close();<br>
+	}<br>
+	
+	<br>
+	//*******************Generating Correlation Matrix**********************************<br>
+	public static double[][] generateCorrArray(double inputArray[][]) throws Exception<br>
+	{<br>
+		PearsonsCorrelation pc = new PearsonsCorrelation();<br>
+		RealMatrix input =new Array2DRowRealMatrix(inputArray);<br>
+		RealMatrix corr;<br>
+		corr  = pc.computeCorrelationMatrix(input);<br>
+		double correlationArray[][] = corr.getData();<br>
+		return correlationArray ;<br>
+	}<br>
+	
+	
+		
+}<br>
+<br>
+</br>
+</p>
+<br>
+<p1><b>ACO Implementation:</b><br>
+The output of Correlation matrix will be input to ACO. We used ACO for finding the best feature subset from the given dataset. In the implementation of ACO, we first initiate 759 ants, one from each feature (considering the destination as 760th feature).<br>
+Step by step implementation of ACO:<br>
+
+1.	Number of ants is defined (In this problem we choose 759 ants which is equal to number of feature) and we need to initialize ants randomly to the features to find the best path.<br>
+
+2.	We are using Parallelization of ACO which work in Map and Reduce phase<br>
+
+3.	In Mapper after initializing the ants, we are calculating the probability of selecting the feature from rest all features. Initially for every feature i, Pheromone =1
+Here we are considering the probability Pi for features where ant is initialized to rest all features.<br>
+
+w is the weight of the feature to be calculated from the <b>Pearson correlation matrix</b>.<br>
+
+The loop will continue until it calculates the probability of all features.<br>
+
+4.      By Implementing the above step we will get the route of the one ant and we are updating the pheromone value for each feature.<br>
+
+Then we are updating Pheromone and this loop will continue until each ant will discover all the features (Route).<br>
+
+
+5.	In Reducer from all the discovered features (route) by all ants we are deciding the optimal feature and that will be the input to the MLIB Machine learning algorithm again.<br>
+
+6. We are removing one feature after each iteration to get the optimal subset of features.<br></p1>
+
+<p><b>ACO Implementation code</b><br>
+
+import org.apache.hadoop.fs.Path;<br>
+import org.apache.hadoop.io.DoubleWritable;<br>
+import org.apache.hadoop.io.NullWritable;<br>
+import org.apache.hadoop.io.*;<br>
+import org.apache.hadoop.conf.*;<br>
+import org.apache.hadoop.mapreduce.Job;<br>
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;<br>
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;<br>
+import org.apache.hadoop.io.Text;<br>
+import org.apache.hadoop.mapreduce.Mapper;<br>
+import org.apache.hadoop.mapreduce.Reducer;<br>
+import org.apache.hadoop.io.WritableComparable;<br>
+import java.io.IOException;<br>
+import java.util.*;<br>
+import org.apache.hadoop.mapred.*;<br>
+import org.apache.hadoop.io.DoubleWritable;<br>
+import java.io.*;<br>
+import org.apache.hadoop.io.ArrayWritable;<br>
+import org.apache.hadoop.io.Writable;<br>
+import java.util.*;<br>
+import java.io.*;<br>
+import java.util.Random; <br>
+<br>
+
+public class acomr{<br>
+	//****************ARRAYWRITABLE*********************************************************<br>
+
+	public static class ArrayWritables extends ArrayWritable {<br>
+		public ArrayWritables() {<br>
+			super(ArrayWritable.class);<br>
+		}<br>
+		public ArrayWritables(Class valueClass) {<br>
+			super(valueClass);<br>
+		}<br>
+		
+	}<br>
+	
+	public static class DoubleArrayWritable extends ArrayWritable {<br>
+
+        public DoubleArrayWritable(Writable[] values) {<br>
+                super(DoubleWritable.class, values);<br>
+        }<br>
+
+        public DoubleArrayWritable() {<br>
+                super(DoubleWritable.class);<br>
+        }<br>
+        public DoubleArrayWritable(Class valueClass, Writable[] values) {<br>
+                super(DoubleWritable.class, values);<br>
+        }<br>
+
+        public DoubleArrayWritable(Class valueClass) {<br>
+                super(DoubleWritable.class);<br>
+        }<br>
+
+        public DoubleArrayWritable(String[] strings) {<br>
+                super(strings);<br>
+        }<br>
+		
+		@Override<br>
+		public String toString() {<br>
+			StringBuilder sb = new StringBuilder();<br>
+			for (String s : super.toStrings())<br>
+			{<br>
+				sb.append(s).append(" ");<br>
+			}<br>
+			return sb.toString();<br>
+		}<br>
+	}<br>
+	
+	//*********************MAPPER**************************************************************<br>
+	public static class MapDischarges extends Mapper<Object, Text,NullWritable, DoubleArrayWritable ><br>
+	{	<br>
+		ArrayList<ArrayList<Double>> array1 = new ArrayList<ArrayList<Double>>();<br>
+		ArrayList<Double> subList = new ArrayList<Double>();<br>
+		DoubleArrayWritable outputArray = new DoubleArrayWritable();<br>
+		DoubleArrayWritable outputArray1 = new DoubleArrayWritable();<br>
+		DoubleArrayWritable outputArray2 = new DoubleArrayWritable();<br>
+		
+		static int destination = 8;<br>
+		//IntWritable outputKey = new IntWritable();<br>			
+			static int columns=9;<br>
+			int j=0,k=0,s=0,check=0;<br>
+			int p=0;<br>
+			double inputMatrix[][]=new double[columns][columns];<br>
+			double pheromone[][]=new double[columns][columns];<br>
+		public void map(Object key, Text value, Context context) throws IOException, InterruptedException<br>
+		{<br>
+			List<Integer> features = new  ArrayList<Integer>();<br>
+			List<Double> Corr = new  ArrayList<Double>();<br>
+			List<Double> Pher = new  ArrayList<Double>();<br>
+			String line = value.toString();<br>
+			String[] words = line.split(",");<br>
+			if(s<columns)<br>
+			{<br>
+				for(int i=0;i<words.length;i++)<br>
+				{<br>
+					inputMatrix[j][i]=Double.parseDouble(words[i]);<br>
+				}<br>
+				j++;<br>
+				
+			}<br>
+			else if(columns <= s && s<(2*columns))<br>
+			{	<br>
+				for(int i=0;i<words.length;i++)<br>
+				{<br>
+					pheromone[k][i]=Double.parseDouble(words[i]);<br>
+				}<br>
+				k++;<br>
+			}<br>
+			else<br>
+			{ <br>
+				for(int i=0;i<words.length;i++)<br>
+				{<br>
+					features.add(Integer.parseInt(words[i]));<br>	
+				}<br>				
+			}<br>
+			s++;<br>
+	
+			check = columns+columns+1;<br>
+			if(s == check)<br>
+			{<br>
+
+				//*********GENERATE ANTS, RELEASE ANTS ******<br>		
+				int numberOfAnts = columns - 1;<br>
+				//int numAnts[] = new int[columns-1];<br>
+				int antCount = (numberOfAnts/2);<br>
+				System.out.println("num="+antCount);<br>
+				int antSource[] = new int[antCount];<br>
+				Random rand = new Random();<br>
+				ArrayList<Integer> arr = new ArrayList<Integer>(numberOfAnts);<br>
+				int y=0;<br>
+				while(arr.size() < antCount)<br>
+				{<br>
+					int random_integer = rand.nextInt(numberOfAnts-1);<br>
+				
+					if(!(arr.contains(random_integer)))<br>
+					{<br>
+						if(features.contains(random_integer))<br>
+						{<br>
+						arr.add(random_integer);<br>
+						antSource[y] =random_integer;<br>
+						System.out.println("ants"+antSource[y]);<br>
+						y++;<br>
+						}<br>
+					}<br>
+				}<br>
+				pheromone = updatePheromone(pheromone,inputMatrix,features);<br>
+				for(int i=0;i<pheromone.length;i++)<br>
+				{<br>
+					for (int j=0;j<pheromone[i].length;j++)<br>
+					{<br>
+						System.out.print(pheromone[i][j]+"\t");<br>
+					}<br>
+					System.out.println("");<br>
+				}<br>
+				List<List<Integer>> subset= new ArrayList<List<Integer>> (numberOfAnts);<br>
+				List<Integer> setOfFeature = new ArrayList<Integer>();	<br>		
+				// Finding the routes for each ant<br>
+				for(int i = 0; i < numberOfAnts; i++)  {<br>
+					subset.add(new ArrayList<Integer>());<br>
+				}<br>
+			
+				for(int i=0;i<antSource.length;i++)<br>
+				{<br>
+					System.out.println("source" +antSource[i] + "\t" + "path: ");<br>
+					setOfFeature= getFeatureSubSet(antSource[i], destination, pheromone, inputMatrix, features);<br>
+					DoubleWritable [] array2 = new DoubleWritable[setOfFeature.size()];<br>
+					for (int k1 = 0; k1 < setOfFeature.size(); k1++) {<br>
+						array2[k1] = new DoubleWritable(setOfFeature.get(k1));<br>
+						System.out.print(setOfFeature.get(k1)+"\t");<br>
+					}<br>
+					System.out.println("");<br>
+		
+					outputArray.set(array2);<br>
+					//outputKey.set(antSource[i]);<br>
+					context.write(NullWritable.get(), outputArray);	<br>
+				}<br>
+				for(int i=0;i<pheromone.length;i++)<br>
+				{<br>
+					DoubleWritable [] arrayPher = new DoubleWritable[columns];<br>
+					for(int j=0;j<pheromone[i].length;j++)<br>
+					{<br>
+						Pher.add(pheromone[i][j]);<br>
+					}<br>
+						for (int k1 = 0; k1 < Pher.size(); k1++) {<br>
+						arrayPher[k1] = new DoubleWritable(Pher.get(k1));<br>
+						System.out.print(Pher.get(k1)+"\t");<br>
+						}<br>
+						outputArray2.set(arrayPher);<br>
+						//outputKey.set(j);<br>
+						context.write(NullWritable.get(), outputArray2);<br>
+					Pher.clear();<br>
+				}<br>
+				for(int i=0;i<inputMatrix.length;i++)<br>
+				{<br>
+					DoubleWritable [] arrayCorr = new DoubleWritable[columns];<br>
+					for(int j=0;j<inputMatrix[i].length;j++)<br>
+					{<br>
+						Corr.add(inputMatrix[i][j]);<br>
+					}<br>
+						for (int k1 = 0; k1 < Corr.size(); k1++) {<br>
+						arrayCorr[k1] = new DoubleWritable(Corr.get(k1));<br>
+						System.out.print(Corr.get(k1)+"\t");<br>
+						}<br>
+						outputArray1.set(arrayCorr);<br>
+						//outputKey.set(j);<br>
+						context.write(NullWritable.get(), outputArray1);<br>
+					Corr.clear();<br>
+				}<br>
+				
+			}<br>
+		}<br>
+		
+		//*************************UPDATE PHEROMONE ******************************<br>
+	
+		public static double[][] updatePheromone(double[][] pheromone, double[][] correlationArray, List<Integer> featureArray)<br>
+		{<br>
+			double s = 0.1;<br> 
+			for(int i=0 ; i< featureArray.size(); i++)<br>
+			{<br>
+				int x = featureArray.get(i);<br>
+				for(int j=0;j<featureArray.size() ; j++)<br>
+				{<br>
+					int y= featureArray.get(j);<br>
+					pheromone[x][y] = ((1-s)*pheromone[x][y]) + correlationArray[x][y];<br>
+				}<br>
+			}<br>
+			return pheromone;<br>
+		}<br>
+
+	
+		public static int getNextNode(int sourceNode, List<Integer> remainingNodes, double pheromone[][], double[][] corrArray, int destination)<br>
+		{<br>
+			double lower=0.0,upper=0.0;<br>
+			int nextNode;<br>
+			double eta=0.0,eta1=0.0;<br>
+			double toque=0.0,toque1=0.0;<br>
+			double probabilities[] = new double[remainingNodes.size()];<br>
+			double max;<br>
+			
+			/* this loop to find probabilities for the nodes not traversed from source node */<br>
+			for(int i=0; i<remainingNodes.size();i++)<br>
+			{<br>
+				eta=corrArray[sourceNode][remainingNodes.get(i)];<br>
+				            //probabilities[i] = calculateProb(sourceNode, remainingNodes,pheromone, corrArray);<br>
+				toque=pheromone[sourceNode][remainingNodes.get(i)];<br>
+				upper=eta*toque; <br>
+				for(int j=0; j<remainingNodes.size();j++)<br>
+				{<br>
+					eta1=corrArray[sourceNode][remainingNodes.get(j)];//probabilities[i] = calculateProb(sourceNode, remainingNodes,pheromone, corrArray);<br>
+					toque1=pheromone[sourceNode][remainingNodes.get(j)];<br>
+					lower+=eta1*toque1;<br>
+				}<br>
+				probabilities[i]=upper/lower;<br>
+			}<br>
+		
+			max = 0.0;<br>
+			nextNode = destination;<br>
+		
+			/*this loop to check the node which has maximum probability */<br>
+			for(int i=0; i< probabilities.length; i++)<br>
+			{<br>
+				if(max < probabilities[i])<br>
+				{<br>
+					max = probabilities[i];<br>
+					nextNode = remainingNodes.get(i);<br>
+				}<br>
+			}<br>
+			
+			return nextNode;<br>
+		}<br>
+	
+	
+		//***********GET SUBSET OF FEATURES FOR ONE ANT **********<br>
+	
+		public static List<Integer> getFeatureSubSet(int source,int dest,  double pheromone[][],double[][]inputMatrix, List<Integer> featureA)<br>
+		{<br>
+			
+			List<Integer> traversedFeatures = new ArrayList<Integer>();// to keep track of already traversed features<br>
+			List<Integer> remainingFeatures = new ArrayList<Integer>(featureA.size());// to keep track of possible remaining features to traverse<br>
+			List<Integer> subset = new ArrayList<Integer>();<br>
+			int nextFeature;<br>
+		
+			remainingFeatures.addAll(featureA);<br>
+			for(Integer x: remainingFeatures)<br>
+			{<br>
+				if(x == source)<br>
+				{<br>
+					remainingFeatures.remove(x);<br>
+					break;<br>
+				}	<br>
+			}<br>
+			
+			traversedFeatures.add(source);<br>
+			
+			
+			//Loop to find next node to traverse till the destination is reached<br>
+			do{<br>
+				
+				nextFeature = getNextNode(source, remainingFeatures, pheromone, inputMatrix, dest);<br>
+				traversedFeatures.add(nextFeature);<br>
+				if(nextFeature == dest)<br>
+				{<br>
+					subset = traversedFeatures;<br>
+					break;<br>
+				}<br>
+				else <br>
+				{<br>
+					for(Integer x: remainingFeatures)<br>
+					{<br>
+						if(x == nextFeature)<br>
+						{<br>
+							remainingFeatures.remove(x);<br>
+							break;<br>
+						}<br>	
+					}<br>
+					source = nextFeature;<br>
+				}<br>
+			}while(nextFeature!= dest);<br>
+			return subset;<br>
+		}<br>	
+	}<br>
+
+	// *********************************REDUCER CLASS ***************************************************************<br>
+	public static class ReduceDischarges extends Reducer<NullWritable, DoubleArrayWritable ,NullWritable, DoubleArrayWritable ><br>
+	{<br>
+		public void reduce(NullWritable key, DoubleArrayWritable values, Context context)throws Exception, InterruptedException<br>
+		{<br>
+			context.write(key, values);<br>
+		}<br>
+	}<br>
+	
+
+	
+	//************************************DRIVER CLASS *************************************************************************<br>
+	public static void main(String [] args) throws Exception<br>
+	{<br>
+		Configuration conf = new Configuration();<br>
+		Job job = Job.getInstance(conf, "mounika_kasaraneni_Program1");<br>
+        job.setJarByClass(acomr.class);<br>
+		//setting the mapper , reducer class and output key and value class <br>
+        job.setMapperClass(MapDischarges.class);<br>
+        job.setReducerClass(ReduceDischarges.class);<br>
+        job.setOutputKeyClass(NullWritable.class);<br>
+        job.setOutputValueClass(DoubleArrayWritable.class);<br>
+		job.setMapOutputKeyClass(NullWritable.class);<br>
+		job.setMapOutputValueClass(DoubleArrayWritable.class);<br>
+		// setting input and output paths<br>
+        FileInputFormat.addInputPath(job, new Path(args[0]));<br>
+        FileOutputFormat.setOutputPath(job, new Path(args[1]));<br>
+        System.exit(job.waitForCompletion(true) ? 0 : 1);<br>
+	}<br>
+	
+	
+}<br></br>
+</p>
+<br><a href="homeaco.html" title=“top”>Go to top</a></br>
+<h2 id="mlibs">Mlibs algorithms to calculate accuracies</h2>
+<p1>Initially Dataset from HDFS path, is taken as input to the ACO Mapper method the mapper method will generate the output as the ants with the features subset, the data from mapper is given as test data to MLIB to perform Machine learning algorithms such Logistic Regression, Decision Trees. So, the output will be the accuracies of each algorithm.
+The Accuracies of these algorithms and input features from HDFS that are selected from the previous iteration are given as input to the wrapper method in next iteration.<br>
+<br>
+<b>To Fetch Columns:</b><br>
+This code is to fetch the columns which is required from mapper output to pass in to mlibs</p1>
+<p><b>To Fetch Columns code</b> <br>
+import sys<br>
+input=sys.argv[1]<br>
+inputwords=input.split(",")<br>
+writeout= open("revised.csv",'w')<br>
+with open("test_data.csv",'r') as file:<br>
+      for line in file:<br>
+        for i in range (0,len(inputwords)-1):<br>
+            j=inputwords[i]<br>
+            x=float(j)<br>
+            filerows=line.split(",")<br>
+            zero=filerows[int(0)]<br>
+            num=filerows[int(x)+1]<br>
+            writeout.write(zero)<br>
+            writeout.write(",")<br>
+            writeout.write(num)<br>
+            if(i!=(len(inputwords)-2)):<br>
+             writeout.write(",")<br>
+        writeout.write("\n")<br>
+</br>
+</p>
+<br>
+<p1><b>Libsvm:</b><br>
+This code is required to convert the file format to libsvm format, to pass the input files to machine learning libraries algorithms.</p1>
+<p><b>Libsvm code</b> <br>
+# python program to get the data into libsvm format<br>
+import sys<br>
+import csv<br>
+from collections import defaultdict<br>
+
+def construct_line( label, line ):<br>
+   new_line = []<br>
+   if float( label ) == 0.0:<br>
+      label = "0"<br>
+   new_line.append( label )<br>
+
+   for i, item in enumerate( line ):<br>
+      if item == '' or float( item ) == 0.0:<br>
+         continue<br>
+      new_item = "%s:%s" % ( i + 1, item )<br>
+      new_line.append( new_item )<br>
+   new_line = " ".join( new_line )<br>
+   new_line += "\n"<br>
+   return new_line<br>
+# reading input and output data<br>
+
+input_file = "revised.csv"<br>
+output_file = "format.txt"<br>
+# getting label as 0<br>
+try:<br>
+   label_index = int(0)<br>
+except IndexError:<br>
+   label_index = 0<br>
+
+try:<br>
+   skip_headers = 0<br>
+except IndexError:<br>
+   skip_headers = 0<br>
+
+i = open( input_file, 'r' )<br>
+o = open( output_file, 'w' )<br>
+
+reader = csv.reader( i )<br>
+
+if skip_headers:<br>
+   headers = reader.next()<br>
+
+for line in reader:<br>
+   if label_index == -1:<br>
+      label = '1'<br>
+   else:<br>
+
+      label = line.pop( label_index )<br>
+
+   new_line = construct_line( label, line )<br>
+   o.write( new_line )<br>
+</br>
+</p>
+<p1><b>Decision Tree:</b> <br>
+The decision tree is a greedy algorithm that performs a recursive binary partitioning of the feature space. The tree predicts the same label for each bottom most (leaf) partition. Each partition is chosen greedily by selecting the best split from a set of possible splits, in order to maximize the information gain at a tree node. Here we are using this to training data and Evaluate model on test data and compute Accuracy.<br></p1>
+<p><b>Decision Tree code</b> <br>
+#importing the packages that are required <br>
+from pyspark import SparkContext<br>
+from pyspark.mllib.tree import DecisionTree, DecisionTreeModel<br>
+from pyspark.mllib.util import MLUtils<br>
+
+#Creating the spark context<br>
+sc = SparkContext(appName="PythonDecisionTreeRegressionExample")<br>
+
+# training the train data in in libsvm format<br>
+trainingData = MLUtils.loadLibSVMFile(sc,"train_data1.txt")<br>
+# loading the test data in libsvm format<br>
+testData = MLUtils.loadLibSVMFile(sc,"test_data1.txt")<br>
+#training the model for Decision trees<br>
+model = DecisionTree.trainClassifier(trainingData, numClasses=12999, categoricalFeaturesInfo={},
+                                     impurity='entropy', maxDepth=5, maxBins=32)<br>
+
+# Evaluate model on test data and compute Accuracy<br>
+predictions = model.predict(testData.map(lambda x: x.features))<br>
+labelsAndPredictions = testData.map(lambda lp: lp.label).zip(predictions)<br>
+testErr = labelsAndPredictions.filter(
+    lambda lp: lp[0] == lp[1]).count() / float(testData.count())<br>
+print('Accuracy = %f '%testErr)<br>
+</br>
+</p>
+<p1><b>Logistic Regression:</b><br>
+Logistic regression falls under the category of supervised learning; it measures the relationship between the categorical dependent variable and one or more independent variables by estimating probabilities using a logistic/sigmoid function. In spite of the name logistic regression, this is not used for regression problem where the task is to predict the real-valued output. Here, we are loading training data and test by fitting the model to calculate accuracy.</p1>
+<p><b>Logistic Regression code</b><br>
+from __future__ import print_function<br>
+
+# $example on$<br>
+from pyspark.ml.classification import LogisticRegression<br>
+# $example off$<br>
+from pyspark.sql import SparkSession<br>
+
+if __name__ == "__main__":<br>
+    spark = SparkSession \<br>
+        .builder \<br>
+        .appName("MulticlassLogisticRegressionWithElasticNet") \<br>
+        .getOrCreate()<br>
+
+    # $example on$<br>
+    # Load training data<br>
+    training = spark \<br>
+        .read \<br>
+        .format("libsvm") \<br>
+        .load("format.txt")<br>
+
+    lr = LogisticRegression(maxIter=2, regParam=0.1, elasticNetParam=0.1)<br>
+
+    # Fit the model<br>
+    lrModel = lr.fit(training)<br>
+    trainingSummary = lrModel.summary<br>
+
+    accuracy = trainingSummary.accuracy<br>
+    
+    print("Accuracy: %s\n"<br>
+          % (accuracy*100))<br>
+    # $example off$<br>
+
+    file=open("accuracyoutput.txt",'a')<br>
+    file1=open("accuracyoutputgraphs.txt",'a')<br>
+    file.write(str(accuracy*100))<br>
+    file.write("\n")<br>
+    file1.write(str(accuracy*100))<br>
+    file1.write("\n")<br>
+    spark.stop()<br>
+</br></p>
+<br><a href="homeaco.html" title=“top”>Go to top</a></br>
+<h2 id="accuracy">Accuracy</h2>
+<p1>In accuracies, we are comparing the accuracy (from MLIB Machine learning algorithm) after each iteration with the previous iteration if the accuracy is less than the previous we will add that feature that is removed and discard other feature that is not removed till now and continue the process until we get subset of features which does not change for 50 iterations(approx.). The input will be the output of mlibs algorithms accuracies to compare for each iteration.<br></p1>
+<p>
+import java.io.BufferedReader;<br>
+import java.io.File;<br>
+import java.io.FileNotFoundException;<br>
+import java.io.FileReader;<br>
+import java.io.IOException;<br>
+import java.nio.file.Files;<br>
+import java.nio.file.Paths;<br>
+import java.util.ArrayList;<br>
+import java.util.Arrays;<br>
+import java.util.Collections;<br>
+import java.util.HashMap;<br>
+import java.util.List;<br>
+import java.util.stream.Collectors;<br>
+import java.io.BufferedReader;<br>
+import java.io.File;<br>
+import java.io.FileReader;<br>
+import java.io.*;<br>
+
+public class accuracy {<br>
+static int count=0;<br>
+static int i=0;<br>
+static int count1=0;<br>
+	public static void main(String[] args) throws IOException {
+		<br>
+		File InitializeAnts = new File("InitializeAnts.txt");<br>
+		File featureCount = new File("featureCount.txt");<br>
+		File inputFile = new File("inputFile.txt");<br>
+		File file = new File("accuracyoutput.txt");<br>
+		BufferedReader br1 = new BufferedReader(new FileReader(file));<br>
+		String st1;<br>
+		BufferedReader br2 = new BufferedReader(new FileReader(file));<br>
+		String st2;<br>
+		FileWriter writer1 = new FileWriter(InitializeAnts, false); <br>
+		FileWriter writer3 = new FileWriter(inputFile, false); <br>
+		BufferedWriter bw1  = new BufferedWriter(writer1);<br>
+		BufferedWriter bw3  = new BufferedWriter(writer3);<br>
+		PrintWriter pw1 = new PrintWriter(bw1);<br>
+		PrintWriter pw3 = new PrintWriter(bw3);<br>
+		FileWriter writer2 = new FileWriter(featureCount, true); <br>
+		BufferedWriter bw2  = new BufferedWriter(writer2);<br>
+		PrintWriter pw2 = new PrintWriter(bw2);<br>
+		while ((st1 = br1.readLine()) != null)<br>
+		{<br>
+		    count++;<br>
+		}<br>
+		String st;<br>
+	    List <Integer> newarray=new ArrayList<Integer>();<br>
+		String[] accuracy=new String[count];<br>
+		
+		HashMap< Double,Integer> map = new HashMap<>();   <br>
+		while ((st2 = br2.readLine()) != null)<br>
+		{<br>
+			 
+		    accuracy[count1]=st2;<br>
+		    i++;<br>
+		    // Store count as key and accuracy as value in map<br>
+		    map.put( Double.parseDouble(st2),count1);<br>
+		    count1++;<br>
+		  }<br>
+		Arrays.sort(accuracy);<br>
+		int g=accuracy.length-1;<br>
+		Double highest = Double.parseDouble(accuracy[g]);<br>
+		double threshold = 3.0;<br>
+		int j=18;<br>
+		double checkAccuracy = highest - threshold;<br>
+		for(int i=0;i<18;i++)<br>
+		{<br>
+			String line1 = Files.readAllLines(Paths.get("part-r-00000")).get(i);<br>
+			pw3.println(line1);		<br>	
+		}<br>
+		for(int i=0;i<accuracy.length;i++)<br>
+		{<br>
+		if(Double.parseDouble(accuracy[i])>=checkAccuracy)<br>
+		{<br>
+			double y=Double.parseDouble(accuracy[i]);<br>
+			if(map.containsKey(y))<br>
+			{<br>
+				int a = map.get(y);<br>
+				String line32 = Files.readAllLines(Paths.get("part-r-00000")).get(a+j);<br>
+				String num[]=line32.split(" ");<br>
+				for(int h=0;h<num.length;h++)<br>
+				{<br>
+					newarray.add((int)(Double.parseDouble(num[h])));<br>
+				}<br>
+			}<br>
+
+		}<br>
+		}<br>
+		List<Integer> finalfeatures= newarray.stream().distinct().collect(Collectors.toList());<br>
+
+		for(int i=0;i<finalfeatures.size();i++)<br>
+			{<br>
+				pw1.print(finalfeatures.get(i));<br>
+				pw3.print(finalfeatures.get(i));<br>
+				if(i < finalfeatures.size() - 1)<br>
+				{<br>
+					pw1.print(",");<br>
+					pw3.print(" ");<br>
+				}<br>
+			}
+<br>
+	int c = finalfeatures.size();<br>
+	pw2.println(c);<br>
+			pw1.flush();<br>
+			pw1.close();<br>
+			pw3.flush();<br>
+			pw3.close();<br>
+			pw2.flush();<br>
+			pw2.close();<br>
+				
+			
+	}<br>
+
+}<br>
+
+</br></p>
+<br><a href="homeaco.html" title=“top”>Go to top</a></br>
+<h2 id="deliverables">Deliverables</h2>
+<p>
+<b>GITHUB link:</b> <a href="https://github.com/acoproject123/aco" title=“GitHub”>https://github.com/acoproject123/aco</a>
+<br>
+</br>
+</p>
+<br><a href="homeaco.html" title=“top”>Go to top</a></br>
+<h2 id="output">Output of ACO Algorithm</h2>
+<p><b>The highest accuracy for the first 50 features from Decision tree</b> = 17.083% <br>
+<br>
+<b>The subset are </b>0.0 3.0 6.0 5.0 1.0 4.0 7.0 2.0 12.0 9.0 31.0 24.0 16.0 14.0 11.0 17.0 18.0 19.0 25.0 26.0 28.0 29.0 30.0 32.0 21.0 33.0 34.0 27.0 23.0 13.0 22.0 43.0 39.0 10.0 40.0 38.0 45.0 47.0 49.0 <br>
+<br>
+<b>The highest accuracy for the first 50 features from logistic regression</b> = 20.706%<br>
+<br>
+<b>The subset are </b>1.0 44.0 3.0 6.0 0.0  30.0 16.0 12.0 26.0 28.0 2.0 17.0 14.0  18.0 25.0 24.0 34.0 33.0 29.0 21.0 27.0 39.0 38.0 40.0 7.0 4.0 22.0 13.0 43.0 46.0 45.0 47.0 49.0<br>
+<br>
+</br></p>
+<br><a href="homeaco.html" title=“top”>Go to top</a></br>
+</body>
+</html>
