@@ -1,5 +1,6 @@
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.conf.*;
 import org.apache.hadoop.mapreduce.Job;
@@ -12,20 +13,16 @@ import org.apache.hadoop.io.WritableComparable;
 import java.io.IOException;
 import java.util.*;
 import org.apache.hadoop.mapred.*;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
 import org.apache.hadoop.io.DoubleWritable;
 import java.io.*;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Writable;
-
-
+import java.util.*;
+import java.io.*;
+import java.util.Random; 
 
 
 public class acomr{
-	
-	
 	//****************ARRAYWRITABLE*********************************************************
 
 	public static class ArrayWritables extends ArrayWritable {
@@ -34,30 +31,28 @@ public class acomr{
 		}
 		public ArrayWritables(Class valueClass) {
 			super(valueClass);
-        // TODO Auto-generated constructor stub
 		}
 		
 	}
 	
-	
-	public static class IntArrayWritable extends ArrayWritable {
+	public static class DoubleArrayWritable extends ArrayWritable {
 
-        public IntArrayWritable(Writable[] values) {
-                super(IntWritable.class, values);
+        public DoubleArrayWritable(Writable[] values) {
+                super(DoubleWritable.class, values);
         }
 
-        public IntArrayWritable() {
-                super(IntWritable.class);
+        public DoubleArrayWritable() {
+                super(DoubleWritable.class);
         }
-        public IntArrayWritable(Class valueClass, Writable[] values) {
-                super(IntWritable.class, values);
-        }
-
-        public IntArrayWritable(Class valueClass) {
-                super(IntWritable.class);
+        public DoubleArrayWritable(Class valueClass, Writable[] values) {
+                super(DoubleWritable.class, values);
         }
 
-        public IntArrayWritable(String[] strings) {
+        public DoubleArrayWritable(Class valueClass) {
+                super(DoubleWritable.class);
+        }
+
+        public DoubleArrayWritable(String[] strings) {
                 super(strings);
         }
 		
@@ -73,99 +68,170 @@ public class acomr{
 	}
 	
 	//*********************MAPPER**************************************************************
-	public static class MapDischarges extends Mapper<Object, Text,IntWritable, IntArrayWritable >
+	public static class MapDischarges extends Mapper<Object, Text,NullWritable, DoubleArrayWritable >
 	{	
 		ArrayList<ArrayList<Double>> array1 = new ArrayList<ArrayList<Double>>();
 		ArrayList<Double> subList = new ArrayList<Double>();
-		IntArrayWritable outputArray = new IntArrayWritable();
+		DoubleArrayWritable outputArray = new DoubleArrayWritable();
+		DoubleArrayWritable outputArray1 = new DoubleArrayWritable();
+		DoubleArrayWritable outputArray2 = new DoubleArrayWritable();
 		
-		static int destination = 8;
-		IntWritable outputKey = new IntWritable();
-			int k=0;
+		static int destination = 49;
+		//IntWritable outputKey = new IntWritable();			
+			static int columns=760;
+			int j=0,k=0,s=0,check=0;
+			int p=0;
+			double inputMatrix[][]=new double[columns][columns];
+			double pheromone[][]=new double[columns][columns];
 		public void map(Object key, Text value, Context context) throws IOException, InterruptedException
 		{
+			List<Integer> features = new  ArrayList<Integer>();
+			List<Double> Corr = new  ArrayList<Double>();
+			List<Double> Pher = new  ArrayList<Double>();
 			String line = value.toString();
-			String[] words = line.split(",");
-			
-			//Reading the input and storing in a list
-			for(int j=0;j<words.length;j++)
+			String[] words = line.split(" ");
+			if(s<columns)
 			{
-				subList.add(Double.parseDouble(words[j]));
-			}
-			array1.add(subList);
-			
-		//	int columns= subList.size(); 
-		int columns =9;
-			int rows= array1.size();
-			double [][] inputMatrix = new double [rows][columns];
-			IntWritable pair= new IntWritable(1);
-			
-			ArrayList<Double> subList2 = new ArrayList<Double>();
-			//Storing the input in a matrix
-			for(int i=0;i<rows;i++)
-			{
-				subList2 = array1.get(i);
-				for(int j=0;j<columns;j++)
+				for(int i=0;i<words.length;i++)
 				{
-					inputMatrix[i][j]= subList2.get(j);
-					
+					inputMatrix[j][i]=Double.parseDouble(words[i]);
 				}
+				j++;
+				
 			}
-			
-			
-			
-			//Initializing pheromone
-			double pheromone[][] = new double[columns][columns];
-			pheromone = initializePheromone(columns);
-			                   
-			
-			//*********GENERATE ANTS, RELEASE ANTS ******		
-			int numberOfAnts = columns - 1;
-			int numAnts[] = new int[columns-1];
-			int antSource[] = new int[numberOfAnts];
-			for(int i=0 ; i< numberOfAnts ; i++)
+			else if(columns <= s && s<(2*columns))
+			{	
+				for(int i=0;i<words.length;i++)
+				{
+					pheromone[k][i]=Double.parseDouble(words[i]);
+				}
+				k++;
+			}
+			else
+			{ 
+				for(int i=0;i<words.length;i++)
+				{
+					features.add(Integer.parseInt(words[i]));	
+				}				
+			}
+			s++;
+	
+			check = columns+columns+1;
+			if(s == check)
 			{
-				antSource[i] = i; /*************CHECK : Need to generate ants randomly not serially*/
-			}
-			
-			List<List<Integer>> subset= new ArrayList<List<Integer>> (numberOfAnts);
-			List<Integer> setOfFeature = new ArrayList<Integer>();
-						
-			// Finding the routes for each ant
-			for(int i = 0; i < numberOfAnts; i++)  {
-				subset.add(new ArrayList<Integer>());
-			}
-			
-		
-			
-			setOfFeature= getFeatureSubSet(antSource[k], destination, pheromone, inputMatrix, columns);
-			IntWritable [] array2 = new IntWritable[setOfFeature.size()];
-			for (int k1 = 0; k1 < setOfFeature.size(); k1++) {
-					array2[k1] = new IntWritable(setOfFeature.get(k1));
+
+				//*********GENERATE ANTS, RELEASE ANTS ******		
+				int numberOfAnts = (features.size()) - 1;
+				//int numAnts[] = new int[columns-1];
+				int antCount = 10;
+			System.out.println("num="+antCount);
+				int antSource[] = new int[antCount];
+				Random rand = new Random();
+				ArrayList<Integer> arr = new ArrayList<Integer>(numberOfAnts);
+				int y=0;
+				while(arr.size() < antCount)
+				{
+					int random_integer = rand.nextInt(numberOfAnts-1);
+				
+					if(!(arr.contains(random_integer)))
+					{
+						if(features.contains(random_integer))
+						{
+						arr.add(random_integer);
+						antSource[y] =random_integer;
+						System.out.println("ants"+antSource[y]);
+						y++;
+						}
+					}
 				}
-		
-			outputArray.set(array2);
-				outputKey.set(k);
-			context.write(outputKey, outputArray);	
-			k++;
+				pheromone = updatePheromone(pheromone,inputMatrix,features);
+				for(int i=0;i<pheromone.length;i++)
+				{
+					for (int j=0;j<pheromone[i].length;j++)
+					{
+						System.out.print(pheromone[i][j]+"\t");
+					}
+					System.out.println("");
+				}
+				List<List<Integer>> subset= new ArrayList<List<Integer>> (numberOfAnts);
+				List<Integer> setOfFeature = new ArrayList<Integer>();			
+				// Finding the routes for each ant
+				for(int i = 0; i < numberOfAnts; i++)  {
+					subset.add(new ArrayList<Integer>());
+				}
 			
+				for(int i=0;i<antSource.length;i++)
+				{
+					System.out.println("source" +antSource[i] + "\t" + "path: ");
+					setOfFeature= getFeatureSubSet(antSource[i], destination, pheromone, inputMatrix, features);
+					DoubleWritable [] array2 = new DoubleWritable[setOfFeature.size()];
+					for (int k1 = 0; k1 < setOfFeature.size(); k1++) {
+						array2[k1] = new DoubleWritable(setOfFeature.get(k1));
+						System.out.print(setOfFeature.get(k1)+"\t");
+					}
+					System.out.println("");
+		
+					outputArray.set(array2);
+					//outputKey.set(antSource[i]);
+					context.write(NullWritable.get(), outputArray);	
+				}
+				DoubleWritable [] arrayPher = new DoubleWritable[columns];
+				for(int i=(columns-1);i>=0;i--)
+				{
+					
+					for(int j=0;j<columns;j++)
+					{
+						Pher.add(pheromone[i][j]);
+					}
+						for (int k1 = 0; k1 < Pher.size(); k1++) {
+						arrayPher[k1] = new DoubleWritable(Pher.get(k1));
+						System.out.print(Pher.get(k1)+"\t");
+						}
+						outputArray2.set(arrayPher);
+						//outputKey.set(j);
+						context.write(NullWritable.get(), outputArray2);
+					Pher.clear();
+				}
+				DoubleWritable [] arrayCorr = new DoubleWritable[columns];
+				for(int i=(columns-1);i>= 0;i--)
+				{
+					
+					for(int j=0;j<columns;j++)
+					{
+						Corr.add(inputMatrix[i][j]);
+					}
+						for (int k1 = 0; k1 < Corr.size(); k1++) {
+						arrayCorr[k1] = new DoubleWritable(Corr.get(k1));
+						System.out.print(Corr.get(k1)+"\t");
+						}
+						outputArray1.set(arrayCorr);
+						//outputKey.set(j);
+						context.write(NullWritable.get(), outputArray1);
+					Corr.clear();
+				}
+				
+			}
 		}
 		
-		
-		public static double[][] initializePheromone(int featureCount)
+		//*************************UPDATE PHEROMONE ******************************
+	
+		public static double[][] updatePheromone(double[][] pheromone, double[][] correlationArray, List<Integer> featureArray)
 		{
-			double pheromone[][] = new double[featureCount][featureCount];
-			for(int i=0;i<featureCount;i++)
+			double s = 0.1; 
+			for(int i=0 ; i< featureArray.size(); i++)
 			{
-				for(int j=0;j<featureCount;j++)
+				int x = featureArray.get(i);
+				for(int j=0;j<featureArray.size() ; j++)
 				{
-					pheromone[i][j] = 1;
+					int y= featureArray.get(j);
+					pheromone[x][y] = ((1-s)*pheromone[x][y]) + correlationArray[x][y];
 				}
 			}
 			return pheromone;
 		}
+
 	
-		public static int getNextNode(int sourceNode, List<Integer> remainingNodes, double pheromone[][], double[][] corrArray)
+		public static int getNextNode(int sourceNode, List<Integer> remainingNodes, double pheromone[][], double[][] corrArray, int destination)
 		{
 			double lower=0.0,upper=0.0;
 			int nextNode;
@@ -177,14 +243,13 @@ public class acomr{
 			/* this loop to find probabilities for the nodes not traversed from source node */
 			for(int i=0; i<remainingNodes.size();i++)
 			{
-				//eta=corrArray[sourceNode][remainingNodes.get(i)];//probabilities[i] = calculateProb(sourceNode, remainingNodes,pheromone, corrArray);
-				eta=1;
+				eta=corrArray[sourceNode][remainingNodes.get(i)];
+				            //probabilities[i] = calculateProb(sourceNode, remainingNodes,pheromone, corrArray);
 				toque=pheromone[sourceNode][remainingNodes.get(i)];
-				upper=eta*toque;
+				upper=eta*toque; 
 				for(int j=0; j<remainingNodes.size();j++)
 				{
-					//eta1=corrArray[sourceNode][remainingNodes.get(j)];//probabilities[i] = calculateProb(sourceNode, remainingNodes,pheromone, corrArray);
-					eta1=1;
+					eta1=corrArray[sourceNode][remainingNodes.get(j)];//probabilities[i] = calculateProb(sourceNode, remainingNodes,pheromone, corrArray);
 					toque1=pheromone[sourceNode][remainingNodes.get(j)];
 					lower+=eta1*toque1;
 				}
@@ -192,7 +257,7 @@ public class acomr{
 			}
 		
 			max = 0.0;
-			nextNode = remainingNodes.get(0);
+			nextNode = destination;
 		
 			/*this loop to check the node which has maximum probability */
 			for(int i=0; i< probabilities.length; i++)
@@ -203,33 +268,39 @@ public class acomr{
 					nextNode = remainingNodes.get(i);
 				}
 			}
+			
 			return nextNode;
 		}
 	
 	
 		//***********GET SUBSET OF FEATURES FOR ONE ANT **********
 	
-		public static List<Integer> getFeatureSubSet(int source,int dest,  double pheromone[][],double[][]inputMatrix, int columns)
+		public static List<Integer> getFeatureSubSet(int source,int dest,  double pheromone[][],double[][]inputMatrix, List<Integer> featureA)
 		{
-			 List<Integer>featureA = new ArrayList<Integer>();
-			for(int i=0;i<columns;i++)
-			{
-				featureA.add(i);
-			}
+			
 			List<Integer> traversedFeatures = new ArrayList<Integer>();// to keep track of already traversed features
 			List<Integer> remainingFeatures = new ArrayList<Integer>(featureA.size());// to keep track of possible remaining features to traverse
 			List<Integer> subset = new ArrayList<Integer>();
 			int nextFeature;
 		
 			remainingFeatures.addAll(featureA);
-			remainingFeatures.remove(source);
+			for(Integer x: remainingFeatures)
+			{
+				if(x == source)
+				{
+					remainingFeatures.remove(x);
+					break;
+				}	
+			}
+			
 			traversedFeatures.add(source);
-		
+			
+			
 			//Loop to find next node to traverse till the destination is reached
 			do{
-				nextFeature = getNextNode(source, remainingFeatures, pheromone, inputMatrix);
+				
+				nextFeature = getNextNode(source, remainingFeatures, pheromone, inputMatrix, dest);
 				traversedFeatures.add(nextFeature);
-			
 				if(nextFeature == dest)
 				{
 					subset = traversedFeatures;
@@ -252,15 +323,16 @@ public class acomr{
 		}	
 	}
 
-
 	// *********************************REDUCER CLASS ***************************************************************
-	public static class ReduceDischarges extends Reducer<IntWritable, IntArrayWritable ,IntWritable, IntArrayWritable >
+	public static class ReduceDischarges extends Reducer<NullWritable, DoubleArrayWritable ,NullWritable, DoubleArrayWritable >
 	{
-		public void reduce(IntWritable key, IntArrayWritable values, Context context)throws Exception, InterruptedException
+		public void reduce(NullWritable key, DoubleArrayWritable values, Context context)throws Exception, InterruptedException
 		{
 			context.write(key, values);
 		}
 	}
+	
+
 	
 	//************************************DRIVER CLASS *************************************************************************8
 	public static void main(String [] args) throws Exception
@@ -271,10 +343,10 @@ public class acomr{
 		//setting the mapper , reducer class and output key and value class 
         job.setMapperClass(MapDischarges.class);
         job.setReducerClass(ReduceDischarges.class);
-        job.setOutputKeyClass(IntWritable.class);
-        job.setOutputValueClass(IntArrayWritable.class);
-		job.setMapOutputKeyClass(IntWritable.class);
-		job.setMapOutputValueClass(IntArrayWritable.class);
+        job.setOutputKeyClass(NullWritable.class);
+        job.setOutputValueClass(DoubleArrayWritable.class);
+		job.setMapOutputKeyClass(NullWritable.class);
+		job.setMapOutputValueClass(DoubleArrayWritable.class);
 		// setting input and output paths
         FileInputFormat.addInputPath(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
