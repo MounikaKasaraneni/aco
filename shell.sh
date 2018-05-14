@@ -18,7 +18,7 @@ if(($j > 1520)); then
   python3 columnsfetch.py ${line// /,}
   python3 libsvm.py
   sed '$11603' format.txt
-  spark-submit lr1.py 
+  spark-submit decisionpy.py 
   fi
   j=$((j+k))
 
